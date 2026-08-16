@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+    background-color: #121212;
+    color: #E0E0E0;
+  }
+}
+
+.font-serif {
+  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+}
+
+.font-mono {
+  font-family: Arial, "Courier New", Courier, monospace;
+}
+
+.font-sans {
+  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+}
+
+/* Custom Editorial Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0A0A0A;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2A2A2A;
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #00A3FF;
+}

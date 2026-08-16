@@ -1,0 +1,155 @@
+============================================================
+ HUONG DAN DEPLOY LEN VERCEL
+ He thong Thiet ke Dieu khien Den Dimming & BMS
+============================================================
+
+Goi nay da duoc chinh sua de tuong thich Vercel:
+  - Giao dien (React + Vite)  -> Vercel build thanh trang tinh (Static Site)
+  - Cac API AI (/api/health, /api/ai-analyze-drawing-boq,
+    /api/ai-audit, /api/ai-chat) -> chuyen thanh 1 Serverless
+    Function duy nhat trong thu muc "api/index.ts"
+  - File "vercel.json" da cau hinh san de dieu huong moi
+    request /api/* vao dung function nay.
+
+Ban KHONG can sua gi them, chi can lam theo 3 cach ben duoi.
+
+
+------------------------------------------------------------
+CACH 1 - DEPLOY NHANH NHAT: KEO THA TREN WEB VERCEL
+    (khong can biet lap trinh, khong can cai gi tren may)
+------------------------------------------------------------
+  1. Vao https://vercel.com va Dang ky / Dang nhap
+     (co the dung tai khoan GitHub, GitLab hoac email).
+
+  2. Tai trang chu Vercel, bam nut "Add New..." > "Project".
+
+  3. Chon tab "Deploy" hoac tim muc cho phep TAI LEN THU MUC/
+     ZIP truc tiep (Vercel cho phep keo-tha 1 thu muc du an
+     vao trinh duyet ma khong can GitHub). Neu khong thay tuy
+     chon nay, dung Cach 2 (qua GitHub) o duoi - do la cach
+     on dinh va pho bien nhat.
+
+  4. Sau khi tai len, Vercel se tu nhan dien day la du an
+     "Vite" va tu dien cau hinh:
+        Build Command:     vite build   (hoac npm run build)
+        Output Directory:  dist
+     -> Cu de nguyen mac dinh, khong can sua.
+
+  5. (TUY CHON) Neu muon dung tinh nang AI QA Cross-Check:
+     truoc khi bam Deploy, mo muc "Environment Variables" va
+     them:
+        Name:  GEMINI_API_KEY
+        Value: <dan API key Gemini cua ban vao day>
+     (Lay key mien phi tai https://aistudio.google.com/apikey)
+     Neu khong dien, app van chay binh thuong, chi rieng tinh
+     nang AI se tu dong dung du lieu mo phong (fallback).
+
+  6. Bam "Deploy" va doi khoang 1-2 phut.
+
+  7. Xong! Vercel se cho ban 1 duong link dang:
+        https://ten-du-an-cua-ban.vercel.app
+     Bam vao link do la mo duoc app tren web, dung tren may
+     tinh/dien thoai nao cung duoc, khong can cai gi ca.
+
+
+------------------------------------------------------------
+CACH 2 - QUA GITHUB (ON DINH NHAT, DE CAP NHAT SAU NAY)
+------------------------------------------------------------
+  1. Tao 1 repository moi (private hoac public deu duoc) tren
+     https://github.com, vi du dat ten: lighting-dimming-bms
+
+  2. Tai may tinh, giai nen goi nay ra 1 thu muc, mo Terminal/
+     Command Prompt tai thu muc do va chay lan luot:
+
+        git init
+        git add .
+        git commit -m "Deploy len Vercel"
+        git branch -M main
+        git remote add origin https://github.com/TEN_BAN/lighting-dimming-bms.git
+        git push -u origin main
+
+     (Thay TEN_BAN bang username GitHub cua ban. Neu chua co
+     Git, tai tai https://git-scm.com)
+
+  3. Vao https://vercel.com > "Add New..." > "Project".
+
+  4. Chon "Import Git Repository", chon dung repo vua tao o
+     Buoc 1-2. Vercel se tu nhan dien Vite, giu nguyen cau
+     hinh mac dinh (Build: vite build, Output: dist).
+
+  5. (TUY CHON) Them bien moi truong GEMINI_API_KEY nhu Buoc 5
+     o Cach 1 neu muon dung tinh nang AI.
+
+  6. Bam "Deploy". Xong, ban co duong link .vercel.app y het
+     Cach 1.
+
+  UU DIEM cach nay: moi lan ban sua code va "git push" len
+  GitHub, Vercel se TU DONG deploy lai ban moi - khong can
+  lam lai tu dau.
+
+
+------------------------------------------------------------
+CACH 3 - DUNG VERCEL CLI (CHO NGUOI QUEN DONG LENH)
+------------------------------------------------------------
+  1. Cai Node.js (https://nodejs.org) neu chua co.
+
+  2. Mo Terminal/Command Prompt tai thu muc da giai nen goi
+     nay, chay:
+
+        npm install -g vercel
+        vercel login
+        vercel
+
+     Tra loi cac cau hoi cau hinh (chon mac dinh la duoc,
+     Vercel tu nhan dien Vite).
+
+  3. Sau khi deploy thu (preview) thanh cong, chay:
+
+        vercel --prod
+
+     de dua len ban chinh thuc (production).
+
+  4. Neu can dung tinh nang AI, them bien moi truong bang
+     lenh:
+
+        vercel env add GEMINI_API_KEY
+
+     roi dan API key vao khi duoc hoi, sau do deploy lai:
+
+        vercel --prod
+
+
+------------------------------------------------------------
+KIEM TRA SAU KHI DEPLOY
+------------------------------------------------------------
+  - Mo duong link https://ten-du-an-cua-ban.vercel.app
+    -> phai thay giao dien bang tinh thiet ke dimming/BMS.
+  - Mo them:
+      https://ten-du-an-cua-ban.vercel.app/api/health
+    -> phai thay ket qua dang:
+      {"status":"ok","geminiConfigured":false,...}
+    (geminiConfigured se la true neu ban da khai bao
+     GEMINI_API_KEY o Buoc tuy chon).
+
+
+------------------------------------------------------------
+CAU HOI THUONG GAP
+------------------------------------------------------------
+- "Trang trang, khong hien gi ca sau khi deploy"
+    -> Vao tab "Deployments" tren Vercel, bam vao ban deploy
+       moi nhat, xem log "Build Logs" de biet loi cu the.
+
+- "Goi /api/... bi loi 404"
+    -> Kiem tra file vercel.json co ton tai trong thu muc goc
+       cua du an (dung bi xoa/quen khi upload) khong.
+
+- "Muon doi ten mien (domain) rieng, vi du: dimmingbms.com"
+    -> Vao Project > Settings > Domains tren Vercel, them
+       ten mien ban da mua va lam theo huong dan tro DNS.
+
+- "Vercel co mien phi khong?"
+    -> Vercel co goi mien phi (Hobby) du dung cho du an ca
+       nhan/thu nghiem. Neu dung cho cong ty/thuong mai quy
+       mo lon hon co the can nang cap goi tra phi - ban kiem
+       tra chi tiet gia va gioi han tai vercel.com/pricing.
+============================================================
