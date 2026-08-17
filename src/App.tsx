@@ -25,6 +25,7 @@ import { SheetControllers } from './components/SheetControllers';
 import { SheetLuminaires } from './components/SheetLuminaires';
 import { SheetDesignCalculator } from './components/SheetDesignCalculator';
 import { SheetSchematicBOQ } from './components/SheetSchematicBOQ';
+import { SheetVoltageDrop } from './components/SheetVoltageDrop';
 import { SheetQACrossCheckAI } from './components/SheetQACrossCheckAI';
 import { AddDeviceModal } from './components/AddDeviceModal';
 import { AddLuminaireModal } from './components/AddLuminaireModal';
@@ -50,16 +51,16 @@ export default function App() {
 
   // Derive current active project
   const activeProject = useMemo(() => {
-    return projects.find(p => p.id === activeProjectId) || projects[0];
+    return (projects || []).find(p => p.id === activeProjectId) || projects?.[0];
   }, [projects, activeProjectId]);
 
   // Derived Unique Brands for Add Modals
   const existingLuminaireBrands = useMemo(() => {
-    return Array.from(new Set(luminaires.map(l => l.brand))).filter(Boolean);
+    return Array.from(new Set((luminaires || []).map(l => l.brand))).filter(Boolean);
   }, [luminaires]);
 
   const existingControllerBrands = useMemo(() => {
-    return Array.from(new Set([...controllers.map(c => c.brand), ...subControllers.map(s => s.brand)])).filter(Boolean);
+    return Array.from(new Set([...(controllers || []).map(c => c.brand), ...(subControllers || []).map(s => s.brand)])).filter(Boolean);
   }, [controllers, subControllers]);
 
   // Current project's line items
@@ -69,7 +70,7 @@ export default function App() {
 
   // Persist projects to LocalStorage whenever projects list changes
   useEffect(() => {
-    if (projects.length > 0) {
+    if ((projects?.length || 0) > 0) {
       saveProjectsToStorage(projects);
     }
   }, [projects]);
@@ -95,8 +96,8 @@ export default function App() {
 
   // Delete project
   const handleDeleteProject = (projectId: string) => {
-    if (projects.length <= 1) return;
-    const remaining = projects.filter(p => p.id !== projectId);
+    if ((projects?.length || 0) <= 1) return;
+    const remaining = (projects || []).filter(p => p.id !== projectId);
     setProjects(remaining);
     if (activeProjectId === projectId) {
       const nextActiveId = remaining[0]?.id || '';
@@ -107,7 +108,7 @@ export default function App() {
 
   // Duplicate project
   const handleDuplicateProject = (projectId: string) => {
-    const target = projects.find(p => p.id === projectId);
+    const target = projects?.find(p => p.id === projectId);
     if (!target) return;
 
     const now = new Date().toISOString();
@@ -123,20 +124,20 @@ export default function App() {
       code: `PRJ-${yy}${mm}-${rand}`,
       createdAt: now,
       updatedAt: now,
-      lineItems: target.lineItems.map((item, idx) => ({
+      lineItems: (target.lineItems || []).map((item, idx) => ({
         ...item,
         id: `line-${Date.now()}-${idx}`
       }))
     };
 
-    setProjects(prev => [duplicated, ...prev]);
+    setProjects(prev => [duplicated, ...(prev || [])]);
     setActiveProjectIdState(duplicated.id);
     setActiveProjectId(duplicated.id);
   };
 
   // Live calculation results for all lines in Sheet 3
   const lineResults = useMemo(() => {
-    return lineItems.map(item => calculateLineResult(item, controllers, luminaires, subControllers));
+    return (lineItems || []).map(item => calculateLineResult(item, controllers || [], luminaires || [], subControllers || []));
   }, [lineItems, controllers, luminaires, subControllers]);
 
   // Aggregate BOQ calculation
@@ -178,12 +179,29 @@ export default function App() {
 
   // Line Item Handlers for Sheet 3 (Updates Active Project)
   const handleUpdateLineItem = (updated: DesignLineItem) => {
-    setProjects(prev => prev.map(p => {
+    setProjects(prev => (prev || []).map(p => {
       if (p.id === activeProjectId) {
-        const exists = p.lineItems.some(i => i.id === updated.id);
+        const items = p.lineItems || [];
+        const exists = items.some(i => i.id === updated.id);
         const newLineItems = exists
-          ? p.lineItems.map(item => item.id === updated.id ? updated : item)
-          : [...p.lineItems, updated];
+          ? items.map(item => item.id === updated.id ? updated : item)
+          : [...items, updated];
+        return {
+          ...p,
+          updatedAt: new Date().toISOString(),
+          lineItems: newLineItems
+        };
+      }
+      return p;
+    }));
+  };
+
+  // Partial update handler for updating specific properties of a line item
+  const handleUpdateLineItemPartial = (id: string, updates: Partial<DesignLineItem>) => {
+    setProjects(prev => (prev || []).map(p => {
+      if (p.id === activeProjectId) {
+        const items = p.lineItems || [];
+        const newLineItems = items.map(item => item.id === id ? { ...item, ...updates } : item);
         return {
           ...p,
           updatedAt: new Date().toISOString(),
@@ -195,12 +213,12 @@ export default function App() {
   };
 
   const handleAddLineItem = () => {
-    const defaultLum = luminaires[0];
-    const defaultCtrl = controllers[0];
+    const defaultLum = luminaires?.[0];
+    const defaultCtrl = controllers?.[0];
 
     const newLine: DesignLineItem = {
       id: `line-${Date.now()}`,
-      zoneName: `Khu Vực Mới - Tuyến Đèn #${lineItems.length + 1}`,
+      zoneName: `Khu Vực Mới - Tuyến Đèn #${(lineItems?.length || 0) + 1}`,
       luminaireBrand: defaultLum ? defaultLum.brand : 'Griven',
       luminaireId: defaultLum ? defaultLum.id : 'lum-griven-capital600',
       fixtureQuantity: 24,
@@ -216,7 +234,7 @@ export default function App() {
   };
 
   const handleDuplicateLineItem = (id: string) => {
-    const target = lineItems.find(i => i.id === id);
+    const target = lineItems?.find(i => i.id === id);
     if (!target) return;
 
     const dupLine: DesignLineItem = {
@@ -229,12 +247,12 @@ export default function App() {
   };
 
   const handleDeleteLineItem = (id: string) => {
-    setProjects(prev => prev.map(p => {
+    setProjects(prev => (prev || []).map(p => {
       if (p.id === activeProjectId) {
         return {
           ...p,
           updatedAt: new Date().toISOString(),
-          lineItems: p.lineItems.filter(i => i.id !== id)
+          lineItems: (p.lineItems || []).filter(i => i.id !== id)
         };
       }
       return p;
@@ -254,6 +272,59 @@ export default function App() {
     );
   };
 
+  // Export Active Project to .json file
+  const handleExportProjectJSON = () => {
+    if (!activeProject) return;
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(activeProject, null, 2));
+    const downloadAnchor = document.createElement('a');
+    const safeCode = (activeProject.code || 'PROJECT').replace(/[^a-zA-Z0-9-_]/g, '_');
+    const safeName = (activeProject.name || 'lighting').replace(/[^a-zA-Z0-9-_]/g, '_').toLowerCase();
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `${safeCode}_${safeName}_${new Date().toISOString().slice(0, 10)}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  };
+
+  // Import Project from .json file
+  const handleImportProjectJSON = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const parsed = JSON.parse(e.target?.result as string);
+        if (parsed && parsed.name && Array.isArray(parsed.lineItems)) {
+          const importedProject: LightingProject = {
+            ...parsed,
+            id: `proj-${Date.now()}`,
+            name: parsed.name.includes('(Đã Nhập)') ? parsed.name : `${parsed.name} (Đã Nhập)`,
+            code: parsed.code ? `${parsed.code}-IMP` : `PRJ-IMP-${Date.now().toString().slice(-4)}`,
+            updatedAt: new Date().toISOString()
+          };
+          setProjects(prev => [importedProject, ...prev]);
+          setActiveProjectIdState(importedProject.id);
+          setActiveProjectId(importedProject.id);
+          setActiveTab(3);
+        } else if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].lineItems) {
+          // Array of projects backup
+          const importedList: LightingProject[] = parsed.map((p, idx) => ({
+            ...p,
+            id: `proj-${Date.now()}-${idx}`,
+            updatedAt: new Date().toISOString()
+          }));
+          setProjects(prev => [...importedList, ...prev]);
+          setActiveProjectIdState(importedList[0].id);
+          setActiveProjectId(importedList[0].id);
+          setActiveTab(3);
+        } else {
+          alert('File JSON không đúng cấu trúc dự án chiếu sáng.');
+        }
+      } catch (err) {
+        alert('Lỗi khi đọc file JSON: ' + err);
+      }
+    };
+    reader.readAsText(file, "UTF-8");
+  };
+
   return (
     <div className="min-h-screen bg-[#070707] text-[#E0E0E0] flex flex-col font-sans selection:bg-[#00A3FF] selection:text-black">
       {/* Navigation Header Bar */}
@@ -262,6 +333,8 @@ export default function App() {
         setActiveTab={setActiveTab}
         onSelectPreset={handleSelectPreset}
         onExportExcel={handleExportExcel}
+        onExportProjectJSON={handleExportProjectJSON}
+        onImportProjectJSON={handleImportProjectJSON}
         onOpenAddControllerModal={() => setIsAddControllerOpen(true)}
         onOpenAddLuminaireModal={() => setIsAddLuminaireOpen(true)}
         onOpenProjectManagerModal={() => setIsProjectManagerOpen(true)}
@@ -323,6 +396,14 @@ export default function App() {
         )}
 
         {activeTab === 5 && (
+          <SheetVoltageDrop
+            calculatedResults={lineResults}
+            lineItems={lineItems}
+            onUpdateLineItem={handleUpdateLineItemPartial}
+          />
+        )}
+
+        {activeTab === 6 && (
           <SheetQACrossCheckAI
             project={activeProject}
             lineResults={lineResults}

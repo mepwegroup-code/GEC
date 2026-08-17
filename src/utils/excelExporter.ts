@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx';
 import { ControllerDevice, LuminaireFixture, CalculatedLineResult, BOQItem, LightingProject } from '../types';
 import { formatVND } from './calculator';
+import { calculateVoltageDropForLine } from './voltageDropCalculator';
 
 export function exportFullLightingSpreadsheetToExcel(
   controllers: ControllerDevice[],
@@ -98,105 +99,93 @@ export function exportFullLightingSpreadsheetToExcel(
     { wch: 12 },
     { wch: 12 },
     { wch: 12 },
-    { wch: 12 },
-    { wch: 12 },
+    { wch: 18 },
+    { wch: 18 },
     { wch: 18 },
     { wch: 45 }
   ];
   XLSX.utils.book_append_sheet(wb, ws2, 'Sheet 2 - Luminaires');
 
-  // --- SHEET 3: BẢNG THIẾT KẾ & TÍNH TOÁN HỆ THỐNG ---
+  // --- SHEET 3: BẢNG TÍNH THIẾT KẾ ĐIỀU KHIỂN CHI TIẾT ---
   const sheet3Data = lineResults.map((res, idx) => ({
     'STT': idx + 1,
-    'Tuyến / Khu Vực': res.item.zoneName,
+    'Khu Vực / Tuyến Đèn': res.item.zoneName,
     'Hãng Đèn': res.item.luminaireBrand,
-    'Mã Đèn Chọn': res.fixture ? res.fixture.model : 'N/A',
-    'Số Lượng Đèn (cái)': res.item.fixtureQuantity,
-    'Địa Chỉ/Đèn': res.fixture ? res.fixture.addressesConsumed : 0,
-    'Tổng Số Địa Chỉ': res.totalAddresses,
-    'Tổng Công Suất (W)': res.totalWattage,
-    'Hãng Điều Khiển': res.item.controllerBrand,
-    'Bộ Điều Khiển Chọn': res.controller ? res.controller.model : 'N/A',
-    'Số Line/Universe Cần': res.universesOrLinesNeeded,
-    'Số Bộ Điều Khiển Cần': res.controllersNeededCount,
-    'Thiết Bị Giao Tiếp / Phụ Trợ 1': res.subController ? `${res.subController.model} (${res.subControllersNeededCount} bộ)` : 'Không',
-    'Thiết Bị Giao Tiếp / Phụ Trợ 2': res.subController2 ? `${res.subController2.model} (${res.subControllers2NeededCount} bộ)` : 'Không',
-    'KC Bộ Cụm -> Đèn Đầu (m)': res.item.controllerToFirstFixtureDistance,
-    'KC Trung Bình Đèn-Đèn (m)': res.item.interFixtureDistance,
-    'KC Đèn 1 -> Đèn Cuối (m)': Math.max(0, res.item.fixtureQuantity - 1) * res.item.interFixtureDistance,
-    'KC Controller -> Đèn Cuối (m)': res.item.controllerToFirstFixtureDistance + Math.max(0, res.item.fixtureQuantity - 1) * res.item.interFixtureDistance,
-    'Tổng Chiều Dài Dây (m)': res.item.totalCableLengthMeters,
-    'Số DMX/DALI Repeater Cần': res.repeatersNeededCount,
-    'Lý Do Cần Repeater': res.repeaterReason || 'Trong giới hạn an toàn',
-    'Số Bộ Trộn Data Enabler Cần': res.specialInjectorsNeededCount,
-    'Mã Bộ Trộn Nguồn/Data': res.injectorModelName,
-    'Kết Nối BMS': res.item.bmsRequired,
-    'Số BMS Gateway Cần': res.bmsGatewaysNeededCount,
-    'Cảnh Báo Kỹ Thuật': res.warnings.join(' | ') || 'An Toàn'
+    'Mã Đèn': res.fixture?.model || 'N/A',
+    'Số Lượng Đèn (Bộ)': res.item.fixtureQuantity,
+    'Địa Chỉ / Đèn': res.fixture?.addressesConsumed || 0,
+    'Tổng Địa Chỉ / Kênh': res.totalAddresses,
+    'Công Suất / Đèn (W)': res.effectiveWattage,
+    'Tổng Công Suất Tuyến (W)': res.totalWattage,
+    'Khoảng Cách Đèn-Đèn (m)': res.item.interFixtureDistance,
+    'Khoảng Cách Tủ-Đèn Đầu (m)': res.item.controllerToFirstFixtureDistance,
+    'Tổng Chiều Dài Cáp Tuyến (m)': res.item.totalCableLengthMeters,
+    'Hãng Controller': res.item.controllerBrand,
+    'Mã Controller': res.controller?.model || 'N/A',
+    'Số Port/Line Cần': res.universesOrLinesNeeded,
+    'Cần Repeater/Splitter?': res.repeatersNeededCount > 0 ? `CÓ (${res.repeatersNeededCount} bộ)` : 'Không',
+    'Cần Bộ Trộn Data Enabler?': res.specialInjectorsNeededCount > 0 ? `CÓ (${res.specialInjectorsNeededCount} bộ ${res.injectorModelName})` : 'Không',
+    'Tích Hợp BMS': res.item.bmsRequired,
+    'Đánh Giá An Toàn & Cảnh Báo': res.warnings.length === 0 ? 'ĐẠT TIÊU CHUẨN' : res.warnings.join(' | ')
   }));
 
   const ws3 = XLSX.utils.json_to_sheet(sheet3Data);
   ws3['!cols'] = [
     { wch: 5 },
-    { wch: 35 },
+    { wch: 30 },
+    { wch: 18 },
     { wch: 20 },
+    { wch: 15 },
+    { wch: 12 },
+    { wch: 15 },
+    { wch: 15 },
+    { wch: 18 },
+    { wch: 15 },
+    { wch: 18 },
+    { wch: 18 },
+    { wch: 18 },
     { wch: 20 },
-    { wch: 12 },
-    { wch: 10 },
-    { wch: 12 },
-    { wch: 12 },
-    { wch: 20 },
-    { wch: 20 },
-    { wch: 12 },
-    { wch: 12 },
-    { wch: 24 },
-    { wch: 24 },
+    { wch: 14 },
+    { wch: 18 },
+    { wch: 25 },
     { wch: 15 },
-    { wch: 15 },
-    { wch: 15 },
-    { wch: 15 },
-    { wch: 40 },
-    { wch: 15 },
-    { wch: 28 },
-    { wch: 12 },
-    { wch: 12 },
-    { wch: 50 }
+    { wch: 45 }
   ];
-  XLSX.utils.book_append_sheet(wb, ws3, 'Sheet 3 - System Design');
+  XLSX.utils.book_append_sheet(wb, ws3, 'Sheet 3 - Design Calculator');
 
-  // --- SHEET 4: BẢNG TỔNG HỢP KHỐI LƯỢNG (BOQ / BOM) ---
-  const sheet4Data: Record<string, any>[] = boqItems.map((item, idx) => ({
+  // --- SHEET 4: TỔNG HỢP KHỐI LƯỢNG VẬT TƯ & DỰ TOÁN BOQ ---
+  const sheet4Data: Array<Record<string, any>> = boqItems.map((item, idx) => ({
     'STT': idx + 1,
-    'Phân Loại': item.category,
+    'Hạng Mục': item.category,
     'Hãng Sản Xuất': item.brand,
-    'Mã Thiết Bị (Model)': item.model,
-    'Tên Chi Tiết Equipment': item.name,
+    'Mã Vật Tư / Thiết Bị': item.model,
+    'Mô Tả Chi Tiết': item.name,
     'Số Lượng': item.quantity,
     'Đơn Vị': item.unit,
-    'Đơn Giá (VNĐ)': item.unitPriceVND,
+    'Đơn Giá Dự Kiến (VNĐ)': item.unitPriceVND,
     'Thành Tiền (VNĐ)': item.totalPriceVND,
     'Ghi Chú Kỹ Thuật': item.notes
   }));
 
-  // Add Summary Rows
+  // Append Total Row
   sheet4Data.push({
-    'STT': 0,
-    'Phân Loại': 'TỔNG CỘNG HỆ THỐNG',
+    'STT': '',
+    'Hạng Mục': 'TỔNG CỘNG',
     'Hãng Sản Xuất': '',
-    'Mã Thiết Bị (Model)': '',
-    'Tên Chi Tiết Equipment': `TỔNG CÔNG SUẤT ĐÈN: ${totalPowerKW.toFixed(2)} kW`,
-    'Số Lượng': 0,
+    'Mã Vật Tư / Thiết Bị': '',
+    'Mô Tả Chi Tiết': `Tổng Công Suất: ${totalPowerKW.toFixed(2)} kW`,
+    'Số Lượng': '',
     'Đơn Vị': '',
-    'Đơn Giá (VNĐ)': 0,
+    'Đơn Giá Dự Kiến (VNĐ)': '',
     'Thành Tiền (VNĐ)': totalCostVND,
-    'Ghi Chú Kỹ Thuật': `Ước tính ngân sách: ${formatVND(totalCostVND)}`
+    'Ghi Chú Kỹ Thuật': 'Chưa bao gồm VAT và chi phí nhân công lập trình'
   });
 
   const ws4 = XLSX.utils.json_to_sheet(sheet4Data);
   ws4['!cols'] = [
     { wch: 5 },
+    { wch: 25 },
     { wch: 20 },
-    { wch: 22 },
     { wch: 22 },
     { wch: 40 },
     { wch: 10 },
@@ -207,8 +196,57 @@ export function exportFullLightingSpreadsheetToExcel(
   ];
   XLSX.utils.book_append_sheet(wb, ws4, 'Sheet 4 - Summary BOQ');
 
-  // --- SHEET 5: KIỂM TRA CHÉO & THẨM TRA KỸ THUẬT (QA/QC AUDIT) ---
+  // --- SHEET 5: TÍNH SỤT ÁP & CHỌN CÁP ĐIỆN ĐỘNG LỰC TCVN ---
   const sheet5Data = lineResults.map((res, idx) => {
+    const dropRes = calculateVoltageDropForLine(res, {
+      assignedPhase: res.item.assignedPhase,
+      supplyPhaseTypeOverride: res.item.supplyPhaseType
+    });
+    return {
+      'STT': idx + 1,
+      'Tuyến Đèn / Khu Vực': dropRes.zoneName,
+      'Pha Cấp Nguồn': dropRes.assignedPhase === '3P' ? '3 Pha (380V)' : dropRes.assignedPhase === 'DC' ? 'DC Supply' : `Pha ${dropRes.assignedPhase} (220V)`,
+      'Mã Đèn & Số Lượng': `${dropRes.luminaireModel} (${dropRes.fixtureQuantity} bộ)`,
+      'Tổng Công Suất (W)': dropRes.totalWattageW,
+      'Điện Áp Cấp (V)': dropRes.voltageSupply,
+      'Dòng Điện Tính Toán Ib (A)': dropRes.loadCurrentA,
+      'Chiều Dài Tuyến L (m)': dropRes.cableLengthMeters,
+      'Tiết Diện Tính Smin (mm²)': dropRes.calculatedMinCrossSectionMm2,
+      'Tiết Diện Chuẩn Chọn S (mm²)': dropRes.selectedStandardSizeMm2,
+      'Mã Cáp Động Lực Đề Xuất': dropRes.selectedCableCode,
+      'Sụt Áp Thực Tế (V)': dropRes.actualVoltageDropV,
+      'Sụt Áp Thực Tế (%)': `${dropRes.actualVoltageDropPercent}%`,
+      'Sụt Áp Cho Phép (%)': `${dropRes.allowableDropPercent}%`,
+      'Dòng Cho Phép Iz (A)': dropRes.currentCarryingCapacityIz,
+      'Aptomat MCB Đề Xuất': dropRes.recommendedMCB,
+      'Đánh Giá Tiêu Chuẩn': dropRes.isOverallCompliant ? 'ĐẠT CHUẨN TCVN' : 'CẦN NÂNG TIẾT DIỆN'
+    };
+  });
+
+  const ws5 = XLSX.utils.json_to_sheet(sheet5Data);
+  ws5['!cols'] = [
+    { wch: 5 },
+    { wch: 28 },
+    { wch: 18 },
+    { wch: 25 },
+    { wch: 16 },
+    { wch: 12 },
+    { wch: 18 },
+    { wch: 16 },
+    { wch: 18 },
+    { wch: 20 },
+    { wch: 35 },
+    { wch: 15 },
+    { wch: 15 },
+    { wch: 15 },
+    { wch: 16 },
+    { wch: 25 },
+    { wch: 18 }
+  ];
+  XLSX.utils.book_append_sheet(wb, ws5, 'Sheet 5 - Voltage Drop TCVN');
+
+  // --- SHEET 6: KIỂM TRA CHÉO & THẨM TRA KỸ THUẬT (QA/QC AUDIT) ---
+  const sheet6Data = lineResults.map((res, idx) => {
     const isOver512 = res.totalAddresses > 512;
     const isOver100m = res.item.totalCableLengthMeters > 100;
     const hasInjector = res.specialInjectorsNeededCount > 0;
@@ -228,8 +266,8 @@ export function exportFullLightingSpreadsheetToExcel(
     };
   });
 
-  const ws5 = XLSX.utils.json_to_sheet(sheet5Data);
-  ws5['!cols'] = [
+  const ws6 = XLSX.utils.json_to_sheet(sheet6Data);
+  ws6['!cols'] = [
     { wch: 5 },
     { wch: 32 },
     { wch: 30 },
@@ -242,7 +280,7 @@ export function exportFullLightingSpreadsheetToExcel(
     { wch: 15 },
     { wch: 45 }
   ];
-  XLSX.utils.book_append_sheet(wb, ws5, 'Sheet 5 - QA QC Cross-Check');
+  XLSX.utils.book_append_sheet(wb, ws6, 'Sheet 6 - QA QC Cross-Check');
 
   // Trigger file download
   const dateStr = new Date().toISOString().slice(0, 10);

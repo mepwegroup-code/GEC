@@ -1,5 +1,5 @@
 import React from 'react';
-import { Cpu, Lightbulb, Calculator, Network, Sparkles } from 'lucide-react';
+import { Cpu, Lightbulb, Calculator, Network, Zap, Sparkles } from 'lucide-react';
 
 interface SheetTabsProps {
   activeTab: number;
@@ -52,6 +52,15 @@ export const SheetTabs: React.FC<SheetTabsProps> = ({
     {
       id: 5,
       sheetNum: 'Sheet 05',
+      name: 'Tính Sụt Áp & Cáp TCVN',
+      shortName: 'Sụt Áp TCVN',
+      icon: Zap,
+      color: 'text-amber-400',
+      badge: 'TCVN 7114 / IEC 61439'
+    },
+    {
+      id: 6,
+      sheetNum: 'Sheet 06',
       name: 'Kiểm Tra Chéo & AI Agent',
       shortName: 'AI Cross-Check',
       icon: Sparkles,
@@ -80,7 +89,9 @@ export const SheetTabs: React.FC<SheetTabsProps> = ({
               <div className="flex items-center gap-2">
                 <span
                   className={`text-[9px] uppercase font-mono font-bold tracking-widest ${
-                    isActive ? (tab.id === 5 ? 'text-emerald-400' : 'text-[#00A3FF]') : 'text-[#666666] group-hover:text-[#999999]'
+                    isActive
+                      ? (tab.id === 6 ? 'text-emerald-400' : (tab.id === 5 ? 'text-amber-400' : 'text-[#00A3FF]'))
+                      : 'text-[#666666] group-hover:text-[#999999]'
                   }`}
                 >
                   {tab.sheetNum}
@@ -88,7 +99,7 @@ export const SheetTabs: React.FC<SheetTabsProps> = ({
                 <span
                   className={`text-[9px] font-mono px-1.5 py-0.2 rounded ${
                     isActive
-                      ? (tab.id === 5 ? 'bg-emerald-500/20 text-emerald-300' : 'bg-[#00A3FF]/20 text-[#00A3FF]')
+                      ? (tab.id === 6 ? 'bg-emerald-500/20 text-emerald-300' : (tab.id === 5 ? 'bg-amber-500/20 text-amber-300' : 'bg-[#00A3FF]/20 text-[#00A3FF]'))
                       : 'bg-[#181818] text-[#666666]'
                   }`}
                 >

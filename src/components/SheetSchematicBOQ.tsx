@@ -400,6 +400,34 @@ export const SheetSchematicBOQ: React.FC<SheetSchematicBOQProps> = ({
                           </span>
                         </div>
                       </>
+                    ) : (activeMasterCtrl?.model?.includes('ZXP399') || activeMasterCtrl?.bmsIntegrationType === 'External Gateway') ? (
+                      <>
+                        {/* BMS -> ADFWeb Gateway Link */}
+                        <div className="flex flex-row md:flex-col items-center justify-center gap-1 shrink-0 px-2">
+                          <ArrowRight className="w-3.5 h-3.5 text-[#00A3FF] rotate-90 md:rotate-0" />
+                          <span className="text-[7px] text-[#00A3FF] font-bold bg-blue-950/40 px-1 border border-blue-900/30">
+                            Cáp Mạng / RS485
+                          </span>
+                        </div>
+
+                        {/* 3rd Party Gateway Node (ADFWeb / Intesis) */}
+                        <div className="bg-[#161616] border border-[#00A3FF] p-2 flex flex-col items-center justify-center min-w-[150px] text-center shrink-0">
+                          <span className="text-[#00A3FF] text-[7px] uppercase tracking-wider font-bold">Gateway Hãng Thứ 3</span>
+                          <span className="font-bold text-white mt-1 text-[11px]">ADFWeb / Intesis Gateway</span>
+                          <span className="text-[7px] text-[#00A3FF] mt-0.5 font-bold">BACnet/Modbus ➔ DMX IN</span>
+                          <span className="text-[6.5px] bg-blue-950/60 text-blue-300 px-1 py-0.5 mt-1 border border-blue-800/40">
+                            DIN-Rail Tủ BMS / Server
+                          </span>
+                        </div>
+
+                        {/* ADFWeb -> ZXP399 DMX IN Link */}
+                        <div className="flex flex-row md:flex-col items-center justify-center gap-1 shrink-0 px-2">
+                          <ArrowRight className="w-3.5 h-3.5 text-amber-400 rotate-90 md:rotate-0" />
+                          <span className="text-[7px] text-amber-400 font-bold bg-amber-950/40 px-1 border border-amber-900/30">
+                            Cáp DMX IN (Kích Hoạt Cảnh)
+                          </span>
+                        </div>
+                      </>
                     ) : (
                       /* BMS -> Master Link */
                       <div className="flex flex-row md:flex-col items-center justify-center gap-1 shrink-0 px-2">

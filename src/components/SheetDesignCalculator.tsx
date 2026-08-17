@@ -40,6 +40,8 @@ interface SheetDesignCalculatorProps {
   onAddLineItem: () => void;
   onDuplicateLineItem: (id: string) => void;
   onDeleteLineItem: (id: string) => void;
+  lastSavedTime?: string;
+  isAutoSaving?: boolean;
 }
 
 // Preset area suggestions
@@ -59,7 +61,9 @@ export const SheetDesignCalculator: React.FC<SheetDesignCalculatorProps> = ({
   onUpdateLineItem,
   onAddLineItem,
   onDuplicateLineItem,
-  onDeleteLineItem
+  onDeleteLineItem,
+  lastSavedTime,
+  isAutoSaving
 }) => {
   const [filterArea, setFilterArea] = useState<string>('ALL');
   const [activeBMSModalController, setActiveBMSModalController] = useState<{
@@ -121,10 +125,23 @@ export const SheetDesignCalculator: React.FC<SheetDesignCalculatorProps> = ({
   // Update Master Controller for an entire Area
   const handleUpdateAreaMasterController = (areaName: string, newBrand: string, newId: string) => {
     const newCtrl = controllers.find(c => c.id === newId) || controllers.find(c => c.brand === newBrand);
-    const supportsBms = isControllerBmsSupported(newCtrl);
+    const isZXP = Boolean(
+      newCtrl?.model.includes('ZXP399') ||
+      newCtrl?.id.includes('zxp399') ||
+      newCtrl?.brand.toLowerCase().includes('signify') ||
+      newCtrl?.brand.toLowerCase().includes('philips') ||
+      newBrand.toLowerCase().includes('signify') ||
+      newBrand.toLowerCase().includes('philips')
+    );
+    const supportsSub = isControllerBmsSupported(newCtrl) || isZXP;
 
     // Find matching default sub-controller for this brand
-    const matchingSub = subControllers.find(s => s.brand.toLowerCase().includes(newBrand.toLowerCase())) || subControllers[0];
+    const matchingSub = subControllers.find(s => {
+      if (isZXP) {
+        return s.brand.toLowerCase().includes('signify') || s.brand.toLowerCase().includes('philips') || s.model.includes('ZXP399');
+      }
+      return s.brand.toLowerCase().includes(newBrand.toLowerCase());
+    }) || subControllers[0];
     
     lineItems.forEach(item => {
       if (getAreaGroup(item.zoneName) === areaName) {
@@ -132,12 +149,12 @@ export const SheetDesignCalculator: React.FC<SheetDesignCalculatorProps> = ({
           ...item,
           controllerBrand: newBrand,
           controllerId: newId,
-          subControllerBrand: supportsBms ? (matchingSub?.brand || item.subControllerBrand) : undefined,
-          subControllerId: supportsBms ? (matchingSub?.id || item.subControllerId) : undefined,
-          subControllerQuantity: supportsBms ? (item.subControllerQuantity || 1) : undefined,
-          subController2Brand: supportsBms ? item.subController2Brand : undefined,
-          subController2Id: supportsBms ? item.subController2Id : undefined,
-          subController2Quantity: supportsBms ? item.subController2Quantity : undefined
+          subControllerBrand: supportsSub ? (matchingSub?.brand || item.subControllerBrand) : undefined,
+          subControllerId: supportsSub ? (matchingSub?.id || item.subControllerId) : undefined,
+          subControllerQuantity: supportsSub ? (item.subControllerQuantity || 1) : undefined,
+          subController2Brand: supportsSub ? item.subController2Brand : undefined,
+          subController2Id: supportsSub ? item.subController2Id : undefined,
+          subController2Quantity: supportsSub ? item.subController2Quantity : undefined
         });
       }
     });
@@ -353,6 +370,27 @@ export const SheetDesignCalculator: React.FC<SheetDesignCalculatorProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <div 
+              className="flex items-center gap-2 bg-[#121212] px-3 py-2 border border-[#2A2A2A] shadow-inner"
+              title="Mọi thay đổi trên từng tuyến đèn, khu vực hoặc thiết bị đều được tự động lưu vào LocalStorage"
+            >
+              <span className="relative flex h-2.5 w-2.5">
+                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 ${isAutoSaving ? 'inline-flex' : 'hidden'}`}></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+              </span>
+              <div className="flex flex-col">
+                <span className="text-[9px] font-mono text-emerald-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                  Auto-Save Bật (LocalStorage)
+                </span>
+                {lastSavedTime && (
+                  <span className="text-[9px] font-mono text-[#888888]">
+                    Lưu lúc: <strong className="text-[#CCCCCC]">{lastSavedTime}</strong>
+                  </span>
+                )}
+              </div>
+            </div>
+
             <button
               onClick={() => setIsAddAreaModalOpen(true)}
               className="flex items-center gap-1.5 bg-[#00A3FF] hover:bg-[#33B5FF] text-black text-xs font-bold uppercase tracking-wider px-4 py-2.5 transition-colors font-sans whitespace-nowrap shadow-md"
@@ -441,23 +479,48 @@ export const SheetDesignCalculator: React.FC<SheetDesignCalculatorProps> = ({
           const activeMasterCtrl = controllers.find(c => c.id === areaItem?.controllerId) || firstLine?.controller || controllers.find(c => c.brand === areaItem?.controllerBrand) || controllers[0];
           const masterBrand = activeMasterCtrl?.brand || areaItem?.controllerBrand || 'Pharos Controls';
 
+          // Detect ZXP399 model or Signify/Philips DMX master controller
+          const isZXP = Boolean(
+            activeMasterCtrl?.model.includes('ZXP399') ||
+            activeMasterCtrl?.id.includes('zxp399') ||
+            activeMasterCtrl?.brand.toLowerCase().includes('signify') ||
+            activeMasterCtrl?.brand.toLowerCase().includes('philips') ||
+            masterBrand.toLowerCase().includes('signify') ||
+            masterBrand.toLowerCase().includes('philips')
+          );
+
           // Filter controllers by brand for the master dropdown
-          const filteredControllersForMaster = controllers.filter(c => c.brand === masterBrand);
+          const filteredControllersForMaster = controllers.filter(c => {
+            if (isZXP) {
+              return c.brand.toLowerCase().includes('signify') || c.brand.toLowerCase().includes('philips');
+            }
+            return c.brand === masterBrand;
+          });
+
+          // Sub-Controller 1 & 2 list filtered for this brand
+          const subCtrlsByBrand = subControllers.filter(s => {
+            if (isZXP) {
+              return s.brand.toLowerCase().includes('signify') || 
+                     s.brand.toLowerCase().includes('philips') || 
+                     s.model.includes('ZXP399');
+            }
+            return s.brand.toLowerCase().includes(masterBrand.toLowerCase()) ||
+                   masterBrand.toLowerCase().includes(s.brand.toLowerCase());
+          });
 
           // Resolve active sub-controller / remote interface device for this Area
           const rawSubId = firstLine?.item?.subControllerId;
           const activeSubId = rawSubId && rawSubId !== 'none'
             ? rawSubId
-            : (rawSubId === 'none' ? 'none' : (subControllers.find(s => s.brand.toLowerCase().includes(masterBrand.toLowerCase()))?.id || subControllers[0]?.id));
-          const isSub1Active = Boolean(activeSubId && activeSubId !== 'none');
-          const currentSub = isSub1Active ? (subControllers.find(s => s.id === activeSubId) || null) : null;
-          const currentSubBrand = currentSub?.brand || masterBrand;
-          const subCtrlsByBrand = subControllers.filter(s => s.brand === currentSubBrand);
+            : (rawSubId === 'none' ? 'none' : (subCtrlsByBrand[0]?.id || subControllers[0]?.id));
+          const isSub1Active = Boolean(activeSubId && activeSubId !== 'none' && subCtrlsByBrand.some(s => s.id === activeSubId));
+          const currentSub = isSub1Active ? (subCtrlsByBrand.find(s => s.id === activeSubId) || null) : null;
           const currentSubQty = firstLine?.item?.subControllerQuantity || 1;
 
           // BMS Support & Protocol Selection for the Area Master Controller
           const isBMSSupported = isControllerBmsSupported(activeMasterCtrl);
           const hasBMS = isBMSSupported;
+          const isSubControllerSupported = hasBMS || isZXP;
           const areaBmsProtocol: BMSProtocol = firstLine?.item?.bmsRequired || 'BACnet IP';
           const isNativeBmsSupported = areaBmsProtocol === 'None' || (activeMasterCtrl?.bmsSupport && activeMasterCtrl.bmsSupport.includes(areaBmsProtocol));
 
@@ -489,8 +552,8 @@ export const SheetDesignCalculator: React.FC<SheetDesignCalculatorProps> = ({
 
           // Universe Capacities (Cộng dồn Master + Sub-Controller Nodes)
           const masterCapacityUniverses = activeMasterCtrl?.portsCount || 1;
-          const sub1CapacityUniverses = (hasBMS && isSub1Active && currentSub) ? ((currentSub.portsCount || 0) * currentSubQty) : 0;
-          const sub2CapacityUniverses = (hasBMS && isSub2Active && currentSub2) ? ((currentSub2.portsCount || 0) * currentSub2Qty) : 0;
+          const sub1CapacityUniverses = (isSubControllerSupported && isSub1Active && currentSub) ? ((currentSub.portsCount || 0) * currentSubQty) : 0;
+          const sub2CapacityUniverses = (isSubControllerSupported && isSub2Active && currentSub2) ? ((currentSub2.portsCount || 0) * currentSub2Qty) : 0;
           const totalSubCapacityUniverses = sub1CapacityUniverses + sub2CapacityUniverses;
           const totalCombinedCapacityUniverses = masterCapacityUniverses + totalSubCapacityUniverses;
 
@@ -636,15 +699,20 @@ export const SheetDesignCalculator: React.FC<SheetDesignCalculatorProps> = ({
                       </div>
                     </div>
 
-                    {/* 1.2 Auxiliary / Remote Interface Device Selection (Pharos RIO 84, RIO 80, EDN, DDNG485, Keypads...) */}
+                    {/* 1.2 Auxiliary / Remote Interface Device Selection (Pharos RIO 84, RIO 80, EDN, DDNG485, Keypads, ZXP399 Sub-Controllers...) */}
                     {(() => {
-                      const isBMSSupported = hasBMS;
+                      const isSubAllowed = hasBMS || isZXP;
 
                       // Sub-Controller 1 & 2 strictly inherit master controller's brand
-                      const subCtrlsByBrand = subControllers.filter(s =>
-                        s.brand.toLowerCase().includes(masterBrand.toLowerCase()) ||
-                        masterBrand.toLowerCase().includes(s.brand.toLowerCase())
-                      );
+                      const subCtrlsByBrand = subControllers.filter(s => {
+                        if (isZXP) {
+                          return s.brand.toLowerCase().includes('signify') || 
+                                 s.brand.toLowerCase().includes('philips') || 
+                                 s.model.includes('ZXP399');
+                        }
+                        return s.brand.toLowerCase().includes(masterBrand.toLowerCase()) ||
+                               masterBrand.toLowerCase().includes(s.brand.toLowerCase());
+                      });
 
                       // Sub-Controller 1 resolution
                       const rawSubId = firstLine?.item?.subControllerId;
@@ -655,7 +723,7 @@ export const SheetDesignCalculator: React.FC<SheetDesignCalculatorProps> = ({
                       const currentSub = isSub1Active ? (subCtrlsByBrand.find(s => s.id === activeSubId) || null) : null;
                       const currentSubQty = firstLine?.item?.subControllerQuantity || 1;
 
-                      // Sub-Controller 2 resolution
+                      // Sub-Controller 2 resolution (Thiết Bị Phụ Trợ 2)
                       const activeSub2Id = firstLine?.item?.subController2Id;
                       const currentSub2 = (activeSub2Id && subCtrlsByBrand.some(s => s.id === activeSub2Id))
                         ? subCtrlsByBrand.find(s => s.id === activeSub2Id)
@@ -663,7 +731,7 @@ export const SheetDesignCalculator: React.FC<SheetDesignCalculatorProps> = ({
                       const currentSub2Qty = firstLine?.item?.subController2Quantity || 1;
                       const isSub2Active = Boolean(activeSub2Id && currentSub2);
 
-                      if (!isBMSSupported) {
+                      if (!isSubAllowed) {
                         return (
                           <div className="pt-2 border-t border-[#222222] space-y-2 bg-[#0F0F0F] p-3 border border-[#1E1E1E]">
                             <div className="flex items-center justify-between">
@@ -1293,17 +1361,22 @@ export const SheetDesignCalculator: React.FC<SheetDesignCalculatorProps> = ({
 
                           {/* 4. Sub-Controller / Auxiliary Device / Signal Routing */}
                           <td className="p-2.5 space-y-1.5 font-mono">
-                            {!isBMSSupported ? (
+                            {!isSubControllerSupported ? (
                               <div className="p-1.5 bg-[#141414] border border-[#222222] text-[10px] text-[#777777] flex items-center gap-1.5" title="Bộ điều khiển Master hoạt động độc lập (Standalone) - Không dùng thiết bị giao tiếp phụ trợ">
                                 <Lock className="w-3 h-3 text-amber-500 shrink-0" />
                                 <span className="text-amber-400 font-bold">Không dùng</span>
                                 <span className="text-[#666666] text-[9px]">(Standalone)</span>
                               </div>
                             ) : (() => {
-                              const subCtrlsForBrand = subControllers.filter(s =>
-                                s.brand.toLowerCase().includes(masterBrand.toLowerCase()) ||
-                                masterBrand.toLowerCase().includes(s.brand.toLowerCase())
-                              );
+                              const subCtrlsForBrand = subControllers.filter(s => {
+                                if (isZXP) {
+                                  return s.brand.toLowerCase().includes('signify') || 
+                                         s.brand.toLowerCase().includes('philips') || 
+                                         s.model.includes('ZXP399');
+                                }
+                                return s.brand.toLowerCase().includes(masterBrand.toLowerCase()) ||
+                                       masterBrand.toLowerCase().includes(s.brand.toLowerCase());
+                              });
                               const availableSubCtrls = subCtrlsForBrand.length > 0 ? subCtrlsForBrand : subControllers;
                               const currentSubId = item.subControllerId || (availableSubCtrls[0] ? availableSubCtrls[0].id : '');
                               const currentParent = item.parentConnection || (item.subControllerId && item.subControllerId !== 'none' ? 'sub1' : 'master');
@@ -1322,19 +1395,22 @@ export const SheetDesignCalculator: React.FC<SheetDesignCalculatorProps> = ({
                                           parentConnection: newParent,
                                         });
                                       }}
-                                      className="w-full bg-[#181818] text-[#00A3FF] text-[10px] px-1 py-1 border border-[#333333] font-bold focus:outline-none focus:border-blue-500"
+                                      className="w-full bg-[#181818] text-[#00A3FF] text-[10px] px-1.5 py-1 border border-[#333333] font-bold focus:outline-none focus:border-blue-500"
                                       title="Chọn đường truyền dẫn tín hiệu chính"
                                     >
                                       <option value="master" className="bg-[#141414] text-[#E0E0E0]">➔ Master Port (Trực tiếp)</option>
-                                      <option value="sub1" className="bg-[#141414] text-[#E0E0E0]">➔ Sub-Controller 1</option>
-                                      <option value="sub2" className="bg-[#141414] text-[#E0E0E0]">➔ Sub-Controller 2</option>
+                                      <option value="sub1" className="bg-[#141414] text-[#E0E0E0]">➔ Sub-Controller 1 / Sub-Node</option>
+                                      <option value="sub2" className="bg-[#141414] text-[#E0E0E0]">➔ Sub-Controller 2 / Interface</option>
                                     </select>
                                   </div>
 
                                   {/* Sub-Controller Selector */}
                                   {currentParent === 'sub1' ? (
-                                    <div className="space-y-1 bg-purple-950/10 p-1 border border-purple-900/20">
-                                      <span className="text-[8px] text-purple-400 uppercase font-sans block">Thiết Bị Giao Tiếp 1:</span>
+                                    <div className="space-y-1 bg-purple-950/20 p-1.5 border border-purple-900/40">
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-[8px] text-purple-300 uppercase font-sans font-bold">Sub-Node / Sub-Ctrl 1:</span>
+                                        {isZXP && <span className="text-[8px] text-amber-400 font-bold bg-amber-950/60 px-1 border border-amber-800/40">ZXP399</span>}
+                                      </div>
                                       <select
                                         value={currentSubId}
                                         onChange={e => {
@@ -1345,8 +1421,8 @@ export const SheetDesignCalculator: React.FC<SheetDesignCalculatorProps> = ({
                                             subControllerBrand: selectedSub ? selectedSub.brand : (e.target.value === 'none' ? undefined : masterBrand)
                                           });
                                         }}
-                                        className="w-full bg-[#141414] text-purple-300 text-[11px] px-1.5 py-1 border border-[#333333] font-bold focus:outline-none focus:border-purple-400 truncate"
-                                        title="Chọn thiết bị phụ trợ"
+                                        className="w-full bg-[#141414] text-purple-300 text-[10px] px-1.5 py-1 border border-[#333333] font-bold focus:outline-none focus:border-purple-400 truncate"
+                                        title="Chọn thiết bị phụ trợ hoặc sub-node"
                                       >
                                         <option value="none" className="bg-[#141414] text-[#A0A0A0]">None (Không dùng)</option>
                                         {availableSubCtrls.map(s => (
@@ -1356,24 +1432,50 @@ export const SheetDesignCalculator: React.FC<SheetDesignCalculatorProps> = ({
                                         ))}
                                       </select>
 
-                                      <div className="flex items-center justify-between text-[9px] text-[#888888]">
+                                      <div className="flex items-center justify-between text-[9px] text-[#888888] pt-0.5 border-t border-purple-900/30">
                                         {currentSubId === 'none' ? (
-                                          <span className="text-[#888888] italic">Không dùng</span>
+                                          <span className="text-[#888888] italic">Không dùng sub-node</span>
                                         ) : (
                                           <>
-                                            <span>Yêu cầu: <strong className="text-purple-400">{res.subControllersNeededCount}x</strong></span>
-                                            <span>{res.subController?.portsCount || 1} P</span>
+                                            <span>Yêu cầu: <strong className="text-purple-300">{res.subControllersNeededCount}x</strong></span>
+                                            <span className="text-purple-400 font-bold">{res.subController?.portsCount || 1} Ports/bộ</span>
                                           </>
                                         )}
                                       </div>
                                     </div>
                                   ) : currentParent === 'sub2' ? (
-                                    <div className="bg-indigo-950/15 p-1.5 border border-indigo-900/20 text-[10px] text-indigo-300 flex items-center justify-between">
-                                      <span className="text-[9px]">Đi tiếp qua Thiết Bị Giao Tiếp 2</span>
+                                    <div className="space-y-1 bg-indigo-950/20 p-1.5 border border-indigo-900/40 text-[10px] text-indigo-300">
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-[8px] text-indigo-300 uppercase font-sans font-bold">Sub-Controller 2:</span>
+                                      </div>
+                                      <select
+                                        value={item.subController2Id || (subCtrlsByBrand[1]?.id || subCtrlsByBrand[0]?.id || '')}
+                                        onChange={e => {
+                                          const selectedSub2 = subControllers.find(s => s.id === e.target.value);
+                                          onUpdateLineItem({
+                                            ...item,
+                                            subController2Id: e.target.value,
+                                            subController2Brand: selectedSub2 ? selectedSub2.brand : masterBrand
+                                          });
+                                        }}
+                                        className="w-full bg-[#141414] text-indigo-300 text-[10px] px-1.5 py-1 border border-[#333333] font-bold focus:outline-none focus:border-indigo-400 truncate"
+                                        title="Chọn thiết bị giao tiếp 2"
+                                      >
+                                        {availableSubCtrls.map(s => (
+                                          <option key={s.id} value={s.id} className="bg-[#141414] text-[#E0E0E0]">
+                                            {s.model} ({s.portsCount} Ports)
+                                          </option>
+                                        ))}
+                                      </select>
+                                      <div className="text-[9px] text-indigo-400 flex items-center justify-between pt-0.5 border-t border-indigo-900/30">
+                                        <span>Giao diện mở rộng</span>
+                                        <span>{currentSub2Qty}x bộ</span>
+                                      </div>
                                     </div>
                                   ) : (
-                                    <div className="text-[9px] text-[#666666] italic px-1">
-                                      Cắm trực tiếp Hub Trung tâm
+                                    <div className="text-[9px] text-[#888888] italic px-1 py-1 bg-[#141414] border border-[#222222] flex items-center justify-between">
+                                      <span>Cắm trực tiếp Master Hub</span>
+                                      <span className="text-amber-400 font-bold">{activeMasterCtrl?.model}</span>
                                     </div>
                                   )}
                                 </div>

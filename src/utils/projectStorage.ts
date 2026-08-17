@@ -75,6 +75,24 @@ export const saveProjectsToStorage = (projects: LightingProject[]): void => {
   }
 };
 
+// Auto-save a single project by updating it within the projects array and writing directly to storage
+export const autoSaveProjectToStorage = (
+  updatedProject: LightingProject,
+  allProjects: LightingProject[]
+): LightingProject[] => {
+  const updatedProjects = allProjects.map(p =>
+    p.id === updatedProject.id ? updatedProject : p
+  );
+  saveProjectsToStorage(updatedProjects);
+  return updatedProjects;
+};
+
+// Format current time for auto-save status indicators (e.g. "08:55:23")
+export const formatAutoSaveTime = (date: Date = new Date()): string => {
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+};
+
 // Get active project ID
 export const getActiveProjectId = (projects: LightingProject[]): string => {
   try {

@@ -15,6 +15,12 @@ Ban KHONG can sua gi them, chi can lam theo 3 cach ben duoi.
 
 
 ------------------------------------------------------------
+DA CO REPO GITHUB LIEN KET VERCEL ROI? -> DOC PHAN "CAP NHAT
+NHANH" O CUOI FILE NAY, BO QUA CACH 1/2/3 BEN DUOI.
+------------------------------------------------------------
+
+
+------------------------------------------------------------
 CACH 1 - DEPLOY NHANH NHAT: KEO THA TREN WEB VERCEL
     (khong can biet lap trinh, khong can cai gi tren may)
 ------------------------------------------------------------
@@ -152,4 +158,76 @@ CAU HOI THUONG GAP
        nhan/thu nghiem. Neu dung cho cong ty/thuong mai quy
        mo lon hon co the can nang cap goi tra phi - ban kiem
        tra chi tiet gia va gioi han tai vercel.com/pricing.
+
+
+------------------------------------------------------------
+CAP NHAT NHANH: TU AI STUDIO -> GITHUB -> VERCEL TU DONG
+   (danh cho lan cap nhat SAU, khi repo GitHub da lien ket
+    san voi Vercel - khong can lam lai tu Cach 1/2/3 o tren)
+------------------------------------------------------------
+Kem theo goi nay co san file "update-from-ai-studio.mjs" -
+mot cong cu nho giup gop code moi tu AI Studio vao du an nay
+CHI VOI 1 LENH, khong lam mat cau hinh Vercel (api/index.ts,
+vercel.json) ban da co san.
+
+CACH DUNG (moi lan Gemini AI Studio co ban code moi):
+
+  1. Trong AI Studio, bam Export/Download code (.zip), giai
+     nen ra 1 thu muc tam bat ky, vi du:
+        C:\Downloads\ai-studio-moi\
+
+  2. Mo Terminal (CMD/PowerShell) tai THU MUC GOC cua du an
+     nay tren may ban (noi co file package.json, thu muc api\,
+     file vercel.json - la thu muc ban da "git clone" hoac
+     dang lam viec cung).
+
+  3. Chay lenh (thay duong dan cho dung voi may ban):
+
+        node update-from-ai-studio.mjs "C:\Downloads\ai-studio-moi"
+
+  4. Doc ky phan ket qua script in ra:
+       - Neu chi thay dong chu "[OK]" o het -> an toan, code
+         giao dien/du lieu (thu muc src, assets...) da duoc
+         cap nhat, phan API (api/index.ts) khong doi.
+       - Neu thay dong "[CANH BAO QUAN TRONG] server.ts (API)
+         TU AI Studio DA THAY DOI!" -> nghia la ban vua them/
+         sua tinh nang lien quan API (vi du: them 1 endpoint
+         AI moi trong AI Studio). Truong hop nay:
+           a. GUI file "api/.snapshot/server.ts.new" (script
+              da tu luu san file nay) cho Claude, nho chuyen
+              doi lai thanh Serverless Function giong
+              api/index.ts hien tai.
+           b. Thay the thu cong api/index.ts bang ban Claude
+              gui lai. KHONG tu y doi api/index.ts theo file
+              server.ts.new, vi cau truc 2 file khac nhau
+              (Express app.listen vs Serverless Function).
+       - Neu thay dong "[dependencies] Co thay doi" -> AI
+         Studio co the da them 1 thu vien moi (vi du them 1
+         package chart, icon...). Script da TU DONG gop vao
+         package.json cho ban roi, chi can npm install lai.
+
+  5. Chay tiep:
+        npm install
+        npm run build        (kiem tra build khong bao loi)
+
+  6. Neu build on:
+        git add .
+        git commit -m "Cap nhat code tu AI Studio"
+        git push
+
+     -> Vi repo GitHub da lien ket san voi Vercel, Vercel se
+        TU DONG nhan push nay va deploy lai ban moi - khong
+        can vao lai vercel.com thao tac gi ca. Vao tab
+        "Deployments" tren Vercel de xem tien trinh neu muon
+        theo doi (thuong xong sau 1-2 phut).
+
+LUU Y:
+  - Neu chi doi giao dien/tinh toan (khong dung API AI), phan
+    lon cac lan cap nhat se chi bao "[OK]" het va ban chi can
+    lam Buoc 5-6, khong can hoi Claude gi them.
+  - Script nay CHI dong bo thu muc "src", "assets" va cac file
+    index.html, metadata.json, .env.example, cong voi phan
+    "dependencies" trong package.json. Cac file cau hinh rieng
+    cua Vercel (api/, vercel.json, "scripts" trong package.json)
+    LUON duoc giu nguyen, AI Studio khong the ghi de len duoc.
 ============================================================

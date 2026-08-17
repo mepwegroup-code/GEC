@@ -115,6 +115,10 @@ export interface DesignLineItem {
   // Topology Tree Routing configuration
   parentConnection?: 'master' | 'sub1' | 'sub2'; // Điểm kết nối (trực tiếp Master, qua Sub-Controller 1, hoặc Sub-Controller 2)
   subControllerLinkMode?: 'star' | 'daisy-chain'; // Kiểu liên kết giữa các Sub-Controllers (Sao/Ethernet hoặc Nối tiếp/AWG Bus)
+
+  // Phase Assignment & Supply System
+  assignedPhase?: 'L1' | 'L2' | 'L3' | '3P' | 'DC'; // Phân pha cấp nguồn (Pha A/L1, Pha B/L2, Pha C/L3, hoặc 3 Pha 380V, DC)
+  supplyPhaseType?: SupplyPhaseType;                 // Loại hệ thống điện áp cấp (1P_220V, 3P_380V, DC_24V...)
 }
 
 // Auto-Calculated Result for Line Item
@@ -297,6 +301,81 @@ export interface DrawingBOQAuditReport {
     recommendation: string;
   }>;
   commissioningChecklist: string[];
+}
+
+// Sheet: Voltage Drop Calculation per TCVN 7114 / TCVN 7447 / IEC 60364 / IEC 61439
+export type SupplyPhaseType = '1P_220V' | '3P_380V' | 'DC_24V' | 'DC_48V' | 'DC_12V';
+
+export interface VoltageDropLineResult {
+  lineId: string;
+  zoneName: string;
+  luminaireModel: string;
+  fixtureQuantity: number;
+  unitWattage: number;
+  totalWattageW: number;
+  voltageSupply: number;
+  phaseType: SupplyPhaseType;
+  assignedPhase: 'L1' | 'L2' | 'L3' | '3P' | 'DC'; // Pha phân bổ
+  powerFactorCosPhi: number;
+  loadCurrentA: number;
+  cableLengthMeters: number;
+  conductorMaterial: 'Cu' | 'Al';
+  insulationType: 'PVC' | 'XLPE';
+  installationMethod: 'Conduit' | 'CableTray' | 'DirectBuried' | 'Air';
+  ambientTempC: number;
+  allowableDropPercent: number; // e.g. 3.0% or 5.0%
+
+  // Calculation results
+  calculatedMinCrossSectionMm2: number;
+  selectedStandardSizeMm2: number;
+  selectedCableCode: string;
+  actualVoltageDropV: number;
+  actualVoltageDropPercent: number;
+  currentCarryingCapacityIz: number;
+  isDropCompliant: boolean;
+  isCurrentCompliant: boolean;
+  isOverallCompliant: boolean;
+  recommendedMCB: string;
+  safetyMarginPercent: number;
+  standardReference: string;
+}
+
+export interface PhaseDistributionSummary {
+  pL1Watts: number;
+  pL2Watts: number;
+  pL3Watts: number;
+  pDCWatts: number;
+  currentL1A: number;
+  currentL2A: number;
+  currentL3A: number;
+  unbalancePercent: number;
+  isUnbalanceAcceptable: boolean; // < 15% per TCVN
+  linesPerPhase: {
+    L1: number;
+    L2: number;
+    L3: number;
+    '3P': number;
+    DC: number;
+  };
+}
+
+export interface VoltageDropProjectSummary {
+  totalLinesCount: number;
+  compliantLinesCount: number;
+  nonCompliantLinesCount: number;
+  totalLoadKW: number;
+  totalCurrentA: number;
+  totalCableLengthM: number;
+  maxVoltageDropPercent: number;
+  avgVoltageDropPercent: number;
+  phaseDistribution: PhaseDistributionSummary;
+  cableSizeBreakdown: Array<{
+    sizeMm2: number;
+    cableType: string;
+    totalLengthMeters: number;
+    linesCount: number;
+    percentage: number;
+  }>;
 }
 
 

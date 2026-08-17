@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { 
   FolderKanban, 
   Plus, 
   Download, 
+  Upload,
   PlusCircle, 
   Lightbulb, 
   Cpu, 
@@ -10,7 +11,8 @@ import {
   Building2,
   CheckCircle,
   SlidersHorizontal,
-  ChevronDown
+  ChevronDown,
+  FileJson
 } from 'lucide-react';
 import { LightingProject, ProjectPreset } from '../types';
 import { PROJECT_PRESETS } from '../data/samplePresets';
@@ -21,6 +23,8 @@ interface NavbarProps {
   setActiveTab: (tab: number) => void;
   onSelectPreset: (preset: ProjectPreset) => void;
   onExportExcel: () => void;
+  onExportProjectJSON?: () => void;
+  onImportProjectJSON?: (file: File) => void;
   onOpenAddControllerModal: () => void;
   onOpenAddLuminaireModal: () => void;
   onOpenProjectManagerModal: () => void;
@@ -32,6 +36,8 @@ interface NavbarProps {
   totalDesignLinesCount: number;
   totalPowerKW: number;
   totalCostVND: number;
+  lastSavedTime?: string;
+  isAutoSaving?: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -39,6 +45,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   setActiveTab,
   onSelectPreset,
   onExportExcel,
+  onExportProjectJSON,
+  onImportProjectJSON,
   onOpenAddControllerModal,
   onOpenAddLuminaireModal,
   onOpenProjectManagerModal,
@@ -49,8 +57,19 @@ export const Navbar: React.FC<NavbarProps> = ({
   totalLuminairesCount,
   totalDesignLinesCount,
   totalPowerKW,
-  totalCostVND
+  totalCostVND,
+  lastSavedTime,
+  isAutoSaving
 }) => {
+  const jsonFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && onImportProjectJSON) {
+      onImportProjectJSON(file);
+      e.target.value = '';
+    }
+  };
   return (
     <header className="bg-[#121212] border-b border-[#333333] text-[#E0E0E0] sticky top-0 z-30 shadow-2xl">
       {/* Top Banner */}
@@ -61,9 +80,16 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="text-[10px] uppercase tracking-[0.2em] text-[#888888] font-semibold font-mono">
               Professional Lighting Control System
             </span>
-            <span className="text-[9px] font-mono text-emerald-400 bg-emerald-950/60 px-1.5 py-0.2 border border-emerald-800/60 flex items-center gap-1">
-              <CheckCircle className="w-2.5 h-2.5" />
-              Auto-Saved
+            <span 
+              className="text-[9px] font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 border border-emerald-800/60 flex items-center gap-1.5 shadow-sm"
+              title={`Dữ liệu dự án được tự động lưu vào LocalStorage${lastSavedTime ? ` lúc ${lastSavedTime}` : ''}`}
+            >
+              <span className="relative flex h-2 w-2">
+                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 ${isAutoSaving ? 'inline-flex' : 'hidden'}`}></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span className="font-bold">Auto-Saved</span>
+              {lastSavedTime && <span className="text-emerald-300/80 font-normal">({lastSavedTime})</span>}
             </span>
           </div>
           <div className="flex items-baseline gap-2 mt-0.5">
@@ -155,6 +181,38 @@ export const Navbar: React.FC<NavbarProps> = ({
             <PlusCircle className="w-3.5 h-3.5 text-amber-400" />
             <span className="hidden sm:inline">+ Mã Đèn</span>
           </button>
+
+          {/* Hidden JSON file input */}
+          <input
+            type="file"
+            ref={jsonFileInputRef}
+            onChange={handleFileChange}
+            accept=".json,application/json"
+            className="hidden"
+          />
+
+          {/* Import / Export JSON Project Buttons */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => jsonFileInputRef.current?.click()}
+              className="flex items-center gap-1.5 bg-[#181818] hover:bg-[#252525] text-amber-300 hover:text-amber-200 text-xs font-mono px-2.5 py-2 border border-amber-800/40 transition-colors"
+              title="Nhập file dự án (.json) đã lưu từ máy tính vào ứng dụng"
+            >
+              <Upload className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden xl:inline">Nhập JSON</span>
+            </button>
+
+            {onExportProjectJSON && (
+              <button
+                onClick={onExportProjectJSON}
+                className="flex items-center gap-1.5 bg-[#181818] hover:bg-[#252525] text-emerald-300 hover:text-emerald-200 text-xs font-mono px-2.5 py-2 border border-emerald-800/40 transition-colors"
+                title="Xuất dự án hiện tại ra file .json để lưu trữ trên máy tính cá nhân"
+              >
+                <FileJson className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="hidden xl:inline">Lưu JSON</span>
+              </button>
+            )}
+          </div>
 
           {/* Export Excel Button */}
           <button

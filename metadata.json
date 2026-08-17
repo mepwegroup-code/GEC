@@ -1,6 +1,6 @@
 {
   "name": "LIGHTING CONTROL CAL",
-  "description": "Bảng tính tra cứu và tự động tính toán thiết bị điều khiển đèn DALI, 1-10V, DMX512/RDM, ColorKinetics, Dynalite, Philips / Signify (UniControl), LTECH, BMS gateway, phụ kiện bộ trộn nguồn/signal, amp/repeater và tính toán chiều dài dây.",
+  "description": "Bảng tính tra cứu và tự động tính toán thiết bị điều khiển đèn DALI, 1-10V, DMX512/RDM, ColorKinetics, Dynalite, Philips / Signify (UniControl), LTECH, BMS gateway, tính toán sụt áp và chọn cáp điện động lực TCVN 7447, cân bằng pha 3 pha/1 pha và biểu đồ phụ tải an toàn.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -92,18 +92,32 @@ export function calculateLineResult(
   const fixture = luminaires.find(f => f.id === item.luminaireId);
   const controller = controllers.find(c => c.id === item.controllerId);
   const supportsBMS = isControllerBmsSupported(controller);
+  const isZXP = Boolean(
+    controller?.model.includes('ZXP399') ||
+    controller?.id.includes('zxp399') ||
+    controller?.brand.toLowerCase().includes('signify') ||
+    controller?.brand.toLowerCase().includes('philips') ||
+    item.controllerBrand?.toLowerCase().includes('signify') ||
+    item.controllerBrand?.toLowerCase().includes('philips')
+  );
+  const allowSubControllers = supportsBMS || isZXP;
 
-  // Find Sub-Controller 1 device if controller supports BMS
+  // Find Sub-Controller 1 & 2 devices
   let subController: SubControllerDevice | undefined = undefined;
   let subController2: SubControllerDevice | undefined = undefined;
 
-  if (supportsBMS) {
+  if (allowSubControllers) {
     subController = subControllersList.find(s => s.id === item.subControllerId);
-    if (!subController && controller) {
-      // Auto-match subController by brand if available
-      subController = subControllersList.find(s => s.brand.toLowerCase().includes(controller.brand.toLowerCase()) || controller.brand.toLowerCase().includes(s.brand.toLowerCase()));
+    if (!subController && controller && item.subControllerId !== 'none') {
+      // Auto-match subController by brand or ZXP
+      subController = subControllersList.find(s => {
+        if (isZXP) {
+          return s.model.includes('ZXP399') || s.brand.toLowerCase().includes('signify') || s.brand.toLowerCase().includes('philips');
+        }
+        return s.brand.toLowerCase().includes(controller.brand.toLowerCase()) || controller.brand.toLowerCase().includes(s.brand.toLowerCase());
+      });
     }
-    subController2 = item.subController2Id ? subControllersList.find(s => s.id === item.subController2Id) : undefined;
+    subController2 = item.subController2Id && item.subController2Id !== 'none' ? subControllersList.find(s => s.id === item.subController2Id) : undefined;
   }
 
   const warnings: string[] = [];
@@ -185,7 +199,7 @@ export function calculateLineResult(
   const portsCount = controller.portsCount || 1;
   const controllersNeededCount = Math.ceil(universesOrLinesNeeded / portsCount);
 
-  // 2.1 Calculate Sub-Controllers Needed (Only if BMS supported and subController is present)
+  // 2.1 Calculate Sub-Controllers Needed (If BMS supported or ZXP399 and subController is present)
   let subControllersNeededCount = 0;
   let autoSubControllersCount = 0;
   const isSubControllerAuto = item.subControllerAutoQty !== false; // Mặc định là True (Tự động tính)
@@ -195,7 +209,7 @@ export function calculateLineResult(
     (item.subController2Id && item.subController2Id && item.subController2Id !== 'none' ? 'sub2' : 'master')
   );
 
-  if (supportsBMS && subController && item.subControllerId && item.subControllerId !== 'none' && activeParent === 'sub1') {
+  if (allowSubControllers && subController && item.subControllerId && item.subControllerId !== 'none' && activeParent === 'sub1') {
     const subPorts = subController.portsCount || 1;
     const byUniv = Math.ceil(universesOrLinesNeeded / subPorts);
     const byFixtures = Math.ceil(item.fixtureQuantity / (subPorts * 32));
@@ -210,9 +224,9 @@ export function calculateLineResult(
     }
   }
 
-  // 2.2 Calculate Secondary Sub-Controllers 2 Needed (Only if BMS supported)
+  // 2.2 Calculate Secondary Sub-Controllers 2 Needed (If BMS supported or ZXP399)
   let subControllers2NeededCount = 0;
-  if (supportsBMS && subController2 && item.subController2Id && item.subController2Id !== 'none' && activeParent === 'sub2') {
+  if (allowSubControllers && subController2 && item.subController2Id && item.subController2Id !== 'none' && activeParent === 'sub2') {
     if (item.subController2Quantity !== undefined && item.subController2Quantity > 0) {
       subControllers2NeededCount = item.subController2Quantity;
     } else {
@@ -304,11 +318,27 @@ export function calculateLineResult(
   let bmsGatewayModelName = 'Không';
 
   if (item.bmsRequired !== 'None') {
-    const nativeSupport = controller.bmsSupport.includes(item.bmsRequired);
+    const isZXP = controller.model.includes('ZXP399') || controller.brand.toLowerCase().includes('signify') || controller.brand.toLowerCase().includes('philips');
+    const isExternalGateway = controller.bmsIntegrationType === 'External Gateway';
+    const nativeSupport = !isExternalGateway && !isZXP && controller.bmsSupport.includes(item.bmsRequired);
+
     if (!nativeSupport) {
       bmsGatewaysNeededCount = 1;
-      bmsGatewayModelName = `Bộ Cổng Chuyển Đổi BMS ${item.bmsRequired} Gateway`;
-      warnings.push(`Bộ điều khiển ${controller.model} chưa tích hợp ${item.bmsRequired} -> Tự động thêm 1 BMS Gateway [${bmsGatewayModelName}].`);
+      if (isZXP || isExternalGateway) {
+        if (item.bmsRequired === 'BACnet IP' || item.bmsRequired === 'BACnet MSTP') {
+          bmsGatewayModelName = 'ADFWeb HD67718-IP / Intesis INBACDMX (BACnet to DMX Gateway)';
+        } else if (item.bmsRequired === 'Modbus TCP' || item.bmsRequired === 'Modbus RTU') {
+          bmsGatewayModelName = 'ADFWeb HD67719-IP / Intesis INMBSDM (Modbus to DMX Gateway)';
+        } else if (item.bmsRequired === 'KNX') {
+          bmsGatewayModelName = 'ADFWeb HD67822-IP / Intesis INKNXDM (KNX to DMX Gateway)';
+        } else {
+          bmsGatewayModelName = `ADFWeb / Intesis (${item.bmsRequired} to DMX IN Gateway)`;
+        }
+        warnings.push(`Bộ điều khiển Signify ${controller.model} không hỗ trợ cổng Native BMS -> Bắt buộc dùng Gateway hãng thứ 3 [${bmsGatewayModelName}] nhận tín hiệu BMS và cấp DMX IN vào ZXP399.`);
+      } else {
+        bmsGatewayModelName = `Bộ Cổng Chuyển Đổi BMS ${item.bmsRequired} Gateway`;
+        warnings.push(`Bộ điều khiển ${controller.model} chưa tích hợp ${item.bmsRequired} -> Tự động thêm 1 BMS Gateway [${bmsGatewayModelName}].`);
+      }
     } else {
       bmsGatewayModelName = `Tích hợp sẵn trên ${controller.model}`;
     }
@@ -339,8 +369,8 @@ export function calculateLineResult(
   }
 
   // General Capacity Checks
-  const sub1Capacity = (supportsBMS && subController) ? (subController.portsCount || 1) * (item.subControllerQuantity || 1) : 0;
-  const sub2Capacity = (supportsBMS && subController2) ? (subController2.portsCount || 1) * (item.subController2Quantity || 1) : 0;
+  const sub1Capacity = (allowSubControllers && subController) ? (subController.portsCount || 1) * (item.subControllerQuantity || 1) : 0;
+  const sub2Capacity = (allowSubControllers && subController2) ? (subController2.portsCount || 1) * (item.subController2Quantity || 1) : 0;
   const totalCombinedCap = (controller.portsCount || 1) + sub1Capacity + sub2Capacity;
   const maxCombinedAddresses = totalCombinedCap * (controller.maxAddressesPerPort || 512);
   if (totalAddresses > controller.maxAddressesPerPort * controller.portsCount) {
@@ -737,7 +767,16 @@ export function generateBOQ(
   // Add BMS Gateways aggregated by Area (1 Gateway per Area Master Controller requiring external conversion)
   areaBmsMap.forEach(({ areaName, controller, bmsRequired, bmsGatewayModelName }) => {
     const bmsKey = `bms-${bmsGatewayModelName}`;
-    const unitPrice = 28000000;
+    const isZXP = controller.model.includes('ZXP399') || controller.brand.toLowerCase().includes('signify') || controller.brand.toLowerCase().includes('philips');
+    const isExternalGateway = controller.bmsIntegrationType === 'External Gateway';
+    const gatewayBrand = (isZXP || isExternalGateway) ? 'ADFWeb / Intesis' : controller.brand;
+    const unitPrice = (isZXP || isExternalGateway) ? 22500000 : 28000000;
+    const gatewayName = (isZXP || isExternalGateway)
+      ? `Bộ Cổng Chuyển Đổi Giao Thức Công Nghiệp BMS (${bmsRequired} ➔ DMX IN)`
+      : `Bộ Cổng Chuyển Đổi Giao Thức BMS (${bmsRequired})`;
+    const gatewayNotes = (isZXP || isExternalGateway)
+      ? `Signify ZXP399 không hỗ trợ cổng Native BMS. Hệ thống trang bị Gateway hãng thứ 3 [${bmsGatewayModelName}] chuyển đổi ${bmsRequired} sang DMX IN cắm vào cổng DMX IN của ZXP399 Master Controller để kích hoạt Scenes khu vực [${areaName}].`
+      : `Tích hợp giao thức BMS ${bmsRequired} cho Master Controller khu vực [${areaName}]`;
 
     if (map.has(bmsKey)) {
       const existing = map.get(bmsKey)!;
@@ -748,14 +787,14 @@ export function generateBOQ(
       map.set(bmsKey, {
         id: bmsKey,
         category: 'BMS Gateway',
-        brand: controller.brand,
+        brand: gatewayBrand,
         model: bmsGatewayModelName,
-        name: `Bộ Cổng Chuyển Đổi Giao Thức BMS (${bmsRequired})`,
+        name: gatewayName,
         quantity: 1,
         unit: 'Bộ',
         unitPriceVND: unitPrice,
         totalPriceVND: unitPrice,
-        notes: `Tích hợp giao thức BMS ${bmsRequired} cho Master Controller khu vực [${areaName}]`
+        notes: gatewayNotes
       });
     }
   });

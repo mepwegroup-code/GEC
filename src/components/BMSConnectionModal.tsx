@@ -14,6 +14,7 @@ import {
   Boxes,
   Zap,
   CheckCircle,
+  AlertCircle,
   ExternalLink,
   Layers
 } from 'lucide-react';
@@ -275,6 +276,40 @@ export const BMSConnectionModal: React.FC<BMSConnectionModalProps> = ({
                           <span className="text-[9px] text-amber-300 mt-0.5">{controller.brand}</span>
                           <span className="text-[8px] bg-amber-950/60 text-amber-300 px-1 py-0.5 mt-1 border border-amber-700/50 font-bold">
                             Cổng LAN eDMX
+                          </span>
+                        </div>
+                      </>
+                    ) : (controller.model?.includes('ZXP399') || controller.bmsIntegrationType === 'External Gateway') ? (
+                      <>
+                        {/* Arrow 1: BMS to 3rd Party Gateway */}
+                        <div className="flex flex-col items-center shrink-0 px-1">
+                          <ArrowRight className="w-4 h-4 text-[#00A3FF] animate-pulse" />
+                          <span className="text-[8px] text-[#00A3FF] font-bold">Cat6/RS485</span>
+                        </div>
+
+                        {/* Node 2: ADFWeb / Intesis 3rd-party Gateway */}
+                        <div className="bg-[#161616] border border-[#00A3FF]/60 p-2.5 flex-1 flex flex-col items-center shadow-lg">
+                          <span className="text-[#00A3FF] text-[9px] uppercase font-bold">Gateway Hãng Thứ 3</span>
+                          <span className="font-bold text-white mt-1 text-xs">ADFWeb / Intesis Gateway</span>
+                          <span className="text-[9px] text-blue-300 mt-0.5">BACnet/Modbus ➔ DMX IN</span>
+                          <span className="text-[8px] bg-blue-950/60 text-blue-300 px-1 py-0.5 mt-1 border border-blue-800/50">
+                            DIN-Rail Tủ BMS / Server
+                          </span>
+                        </div>
+
+                        {/* Arrow 2: Gateway to ZXP399 DMX IN */}
+                        <div className="flex flex-col items-center shrink-0 px-1">
+                          <ArrowRight className="w-4 h-4 text-amber-400 animate-pulse" />
+                          <span className="text-[8px] text-amber-400 font-bold">Cáp DMX IN</span>
+                        </div>
+
+                        {/* Node 3: Signify ZXP399 Master Controller */}
+                        <div className="bg-[#181818] border-2 border-amber-400 p-2.5 flex-1 flex flex-col items-center shadow-lg">
+                          <span className="text-amber-400 text-[9px] uppercase font-bold">Master Controller (Signify)</span>
+                          <span className="font-bold text-[#F2F2F2] mt-1 text-xs">{controller.model}</span>
+                          <span className="text-[9px] text-amber-300 mt-0.5">Nhận Kích Hoạt Cảnh qua DMX IN</span>
+                          <span className="text-[8px] bg-amber-950/60 text-amber-300 px-1 py-0.5 mt-1 border border-amber-700/50 font-bold">
+                            Cổng LAN Art-Net Tủ ĐK
                           </span>
                         </div>
                       </>
@@ -677,33 +712,46 @@ export const BMSConnectionModal: React.FC<BMSConnectionModalProps> = ({
               <div className="bg-[#111111] p-4 border border-emerald-800/40 space-y-3">
                 <div className="flex items-center gap-2 text-emerald-400 font-mono font-bold text-xs">
                   <Boxes className="w-4 h-4" />
-                  <span>3. GIẢI PHÁP SỬ DỤNG GATEWAY ĐỘC LẬP (DÀNH CHO BỘ ĐIỀU KHIỂN DMX THÔNG THƯỜNG)</span>
+                  <span>3. GIẢI PHÁP SỬ DỤNG GATEWAY HÃNG THỨ 3 (DÀNH CHO SIGNIFY ZXP399 & BỘ ĐIỀU KHIỂN DMX TIÊU CHUẨN)</span>
                 </div>
 
                 <div className="p-3 bg-[#161616] border border-[#2A2A2A] space-y-3">
+                  <div className="bg-amber-950/30 border border-amber-800/50 p-3 text-amber-200 text-xs space-y-1.5 font-mono">
+                    <div className="font-bold flex items-center gap-1.5 text-amber-400">
+                      <AlertCircle className="w-4 h-4" />
+                      <span>LƯU Ý THIẾT KẾ CHO SIGNIFY ZXP399 CONTROLLER:</span>
+                    </div>
+                    <p className="text-[11px] leading-relaxed text-[#CCCCCC] font-sans">
+                      Các dòng bộ điều khiển trung tâm <strong>Signify ZXP399 Main Controller (6,000 Universes)</strong> và <strong>ZXP399 Standalone Controller</strong> chuyên dụng cho Media Façade <strong>không hỗ trợ cổng Native BMS</strong> (BACnet, Modbus, KNX). Nếu hệ thống BMS tòa nhà bắt buộc giao tiếp bằng các chuẩn công nghiệp này, giải pháp tiêu chuẩn bắt buộc là trang bị thêm bộ Gateway phiên dịch của hãng thứ 3.
+                    </p>
+                    <div className="text-[10px] text-emerald-300 pt-1 border-t border-amber-900/40">
+                      <strong>Luồng hoạt động chuẩn:</strong> BMS (chuẩn BACnet/Modbus/KNX) ➔ Cáp mạng RJ45/RS485 ➔ <strong>ADFWeb / Intesis Gateway</strong> ➔ Chuyển đổi thành tín hiệu <strong>DMX IN</strong> ➔ Cắm vào cổng DMX IN của ZXP399 Master Controller để kích hoạt hiệu ứng / cảnh chiếu sáng.
+                    </div>
+                  </div>
+
                   <p className="text-[11px] text-[#CCCCCC] leading-relaxed font-sans">
-                    Nếu dự án của bạn sử dụng các bộ điều khiển DMX tiêu chuẩn (không có sẵn cổng BMS tích hợp), bạn có thể sử dụng Gateway chuyển đổi giao thức chuyên dụng từ các hãng phần cứng kết nối hàng đầu thế giới như <strong>Intesis (HMS Networks - Tây Ban Nha)</strong> hoặc <strong>ADFWeb (Ý)</strong>:
+                    Các module Gateway chuyên dụng từ các hãng truyền thông công nghiệp hàng đầu thế giới như <strong>ADFWeb (Ý)</strong> hoặc <strong>Intesis (HMS Networks - Tây Ban Nha)</strong>:
                   </p>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] font-mono">
                     <div className="bg-[#1C1C1C] p-2.5 border border-emerald-800/50 flex flex-col gap-1">
                       <span className="text-emerald-400 font-bold">DMX ↔ BACnet IP / MS/TP</span>
                       <span className="text-[#AAAAAA] text-[10px]">
-                        Intesis INBACDMX0200000 / ADFWeb HD67718-IP. BMS đọc/ghi trực tiếp 512 địa chỉ DMX.
+                        ADFWeb HD67718-IP / Intesis INBACDMX0200000. BMS đọc/ghi trực tiếp 512 địa chỉ DMX, cấp DMX IN cho ZXP399.
                       </span>
                     </div>
 
                     <div className="bg-[#1C1C1C] p-2.5 border border-amber-800/50 flex flex-col gap-1">
                       <span className="text-amber-400 font-bold">DMX ↔ Modbus RTU / TCP</span>
                       <span className="text-[#AAAAAA] text-[10px]">
-                        Intesis INMBSDM0200000 / ADFWeb HD67717. Chuyển đổi 512 Modbus Holding Registers sang DMX.
+                        ADFWeb HD67719-IP / Intesis INMBSDM0200000. Chuyển đổi 512 Modbus Holding Registers sang DMX IN.
                       </span>
                     </div>
 
                     <div className="bg-[#1C1C1C] p-2.5 border border-blue-800/50 flex flex-col gap-1">
                       <span className="text-blue-400 font-bold">DMX ↔ KNX / SNMP</span>
                       <span className="text-[#AAAAAA] text-[10px]">
-                        Intesis INKNXDMX0200000. Tích hợp trực tiếp hệ thống nhà thông minh chuẩn KNX TP.
+                        ADFWeb HD67822-IP / Intesis INKNXDMX0200000. Tích hợp trực tiếp hệ thống nhà thông minh chuẩn KNX TP sang DMX.
                       </span>
                     </div>
                   </div>

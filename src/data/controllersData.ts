@@ -173,10 +173,10 @@ export const INITIAL_CONTROLLERS: ControllerDevice[] = [
     model: 'ZXP399 Main Controller DMX',
     name: 'Máy Tính Công Nghiệp Điều Khiển Trung Tâm ZXP399 Main Controller (6,000 Universes Art-Net)',
     protocol: 'DMX512/RDM',
-    bmsSupport: ['BACnet IP', 'Modbus TCP', 'Rest API', 'Interact Cloud'],
-    bmsIntegrationType: 'Native IP',
-    bmsCableType: '2x Cáp Cat5/Cat6 SFTP (LAN1: Art-Net Out to Switches/Sub-Controllers, LAN2: BMS / Remote Monitoring In)',
-    bmsConnectionGuide: 'Máy tính công nghiệp 32-bit cài sẵn phần mềm điều khiển. Cổng RJ45 thứ 2 (LAN2) kết nối vào hạ tầng mạng BMS/Scada tòa nhà. BMS gửi lệnh kích hoạt Scenes, Media Facade Schedules và giám sát trạng thái hệ thống. Có thể mở rộng lên tới 24,000 Universes (ETO).',
+    bmsSupport: ['None'],
+    bmsIntegrationType: 'External Gateway',
+    bmsCableType: 'Cáp Cat6 / RS485 (BMS ➔ Gateway) + Cáp DMX IN 3P/5P (Gateway ➔ ZXP399)',
+    bmsConnectionGuide: 'Thiết bị ZXP399 không hỗ trợ cổng Native BMS (BACnet/Modbus/KNX). Bắt buộc sử dụng module Gateway của hãng thứ 3 chuyên về truyền thông công nghiệp (như ADFWeb HD67718-IP hoặc Intesis). Luồng hoạt động: BMS (chuẩn BACnet/Modbus) ➔ Cáp mạng/RS485 ➔ ADFWeb Gateway ➔ Chuyển đổi thành tín hiệu DMX IN ➔ Cắm vào cổng DMX IN của ZXP399 Master Controller để kích hoạt hiệu ứng.',
     product12NC: '911401756612',
     rackUnit: 'Industrial 32-bit Tower PC / Rack',
     maxAddressesPerPort: 512,
@@ -185,7 +185,7 @@ export const INITIAL_CONTROLLERS: ControllerDevice[] = [
     maxCableDistanceMeters: 100,
     voltageInput: '100-240V AC (Có cổng Monitor, Bàn phím, Chuột)',
     priceVND: 95000000,
-    notes: 'Máy tính công nghiệp điều khiển trung tâm 6,000 Universes Art-Net. Đặt tại Phòng Server / Phòng Điều Khiển Trung Tâm có PC. Dùng cho dự án Media Façade lớn.'
+    notes: 'Máy tính công nghiệp điều khiển trung tâm 6,000 Universes Art-Net (Signify). Không hỗ trợ cổng Native BMS, yêu cầu bộ Gateway bên thứ 3 (như ADFWeb / Intesis DMX Gateway) để giao tiếp BMS.'
   },
   {
     id: 'ctrl-philips-zxp399-main-rdm',
@@ -193,10 +193,10 @@ export const INITIAL_CONTROLLERS: ControllerDevice[] = [
     model: 'ZXP399 Main Controller DMX/RDM',
     name: 'Máy Tính Công Nghiệp Điều Khiển Trung Tâm ZXP399 Main Controller DMX/RDM (6,000 Universes)',
     protocol: 'DMX512/RDM',
-    bmsSupport: ['BACnet IP', 'Modbus TCP', 'Rest API', 'Interact Cloud'],
-    bmsIntegrationType: 'Native IP',
-    bmsCableType: '2x Cáp Cat5/Cat6 SFTP hoặc Cáp Quang (Fiber Converter)',
-    bmsConnectionGuide: 'Cổng LAN2 kết nối mạng BMS Server. Hỗ trợ phản hồi 2 chiều RDM (Remote Device Management) báo cáo tình trạng đèn hư hỏng về phần mềm trung tâm và BMS.',
+    bmsSupport: ['None'],
+    bmsIntegrationType: 'External Gateway',
+    bmsCableType: 'Cáp Cat6 / RS485 (BMS ➔ Gateway) + Cáp DMX IN 3P/5P (Gateway ➔ ZXP399)',
+    bmsConnectionGuide: 'Thiết bị ZXP399 không hỗ trợ cổng Native BMS. Bắt buộc lắp thêm bộ phiên dịch Gateway từ hãng thứ 3 (ADFWeb / Intesis) nhận tín hiệu BACnet/Modbus và chuyển thành DMX IN vào cổng DMX IN của ZXP399.',
     product12NC: '911401756622',
     rackUnit: 'Industrial 32-bit Tower PC / Rack',
     maxAddressesPerPort: 512,
@@ -205,7 +205,7 @@ export const INITIAL_CONTROLLERS: ControllerDevice[] = [
     maxCableDistanceMeters: 100,
     voltageInput: '100-240V AC',
     priceVND: 118000000,
-    notes: 'Hệ thống điều khiển trung tâm 6,000 Universes tích hợp chuẩn RDM giám sát trạng thái từng đèn trên mặt đứng.'
+    notes: 'Hệ thống điều khiển trung tâm 6,000 Universes RDM. Không có Native BMS, cần Gateway bên thứ 3 (ADFWeb / Intesis) kết nối qua cổng DMX IN.'
   },
   {
     id: 'ctrl-philips-zxp399-standalone',
@@ -213,10 +213,10 @@ export const INITIAL_CONTROLLERS: ControllerDevice[] = [
     model: 'ZXP399 Standalone Controller 12V DMX',
     name: 'Bộ Điều Khiển Độc Lập ZXP399 Standalone Controller ARM (700 Universes Art-Net)',
     protocol: 'DMX512/RDM',
-    bmsSupport: ['BACnet IP', 'Modbus TCP', 'Rest API'],
-    bmsIntegrationType: 'Native IP',
-    bmsCableType: '2x Cáp Cat5/Cat6 SFTP RJ45 (LAN1: Art-Net Out, LAN2: BMS / Remote Control)',
-    bmsConnectionGuide: 'Bộ vi xử lý nhúng ARM chuyên dụng. Cổng LAN2 kết nối Switch mạng BMS để nhận lệnh Trigger Scenes từ Server trung tâm. Kịch bản lưu trên thẻ nhớ SD Card 8GB (FAT32, file định dạng *.arm).',
+    bmsSupport: ['None'],
+    bmsIntegrationType: 'External Gateway',
+    bmsCableType: 'Cáp Cat6/RS485 (BMS ➔ Gateway) + Cáp DMX IN (Gateway ➔ ZXP399)',
+    bmsConnectionGuide: 'Bộ vi xử lý nhúng ARM chuyên dụng không có cổng Native BMS. Cần kết nối qua module Gateway bên thứ 3 (như ADFWeb / Intesis) chuyển đổi BACnet/Modbus sang DMX IN để kích hoạt cảnh từ xa. Kịch bản lưu trên thẻ nhớ SD Card 8GB (FAT32, file *.arm).',
     product12NC: '911401756632',
     rackUnit: 'DIN-Rail / Rackmount Box',
     maxAddressesPerPort: 512,
@@ -225,7 +225,7 @@ export const INITIAL_CONTROLLERS: ControllerDevice[] = [
     maxCableDistanceMeters: 100,
     voltageInput: '12V DC',
     priceVND: 42000000,
-    notes: 'Bộ điều khiển Standalone ARM 700 Universes Art-Net chạy độc lập qua thẻ nhớ SD Card 8GB FAT32 (*.arm).'
+    notes: 'Bộ điều khiển Standalone ARM 700 Universes Art-Net (Signify). Cần Gateway bên thứ 3 giao tiếp BMS qua cổng DMX IN.'
   },
   {
     id: 'ctrl-philips-zxp399-uniplayer-8port',
@@ -233,10 +233,10 @@ export const INITIAL_CONTROLLERS: ControllerDevice[] = [
     model: 'ZXP399 UniPlayer DMX Controller 12V 8port',
     name: 'Bộ Điều Khiển Trực Tiếp UniPlayer 8 Cổng DMX Trực Tiếp (8 Universes - Không Cần Sub-Controller)',
     protocol: 'DMX512/RDM',
-    bmsSupport: ['Modbus TCP', 'Rest API'],
-    bmsIntegrationType: 'Native IP',
-    bmsCableType: '2x Cáp Cat5/Cat6 RJ45 + 8 Đường Cáp DMX 5P/4P',
-    bmsConnectionGuide: 'Cổng LAN nhận lệnh kích hoạt cảnh từ xa. Tích hợp sẵn 8 cổng DMX output xuất thẳng tới các tuyến đèn mà không cần qua Sub-controller. Đọc file kịch bản *.arm từ thẻ nhớ SD 8GB FAT32.',
+    bmsSupport: ['None'],
+    bmsIntegrationType: 'External Gateway',
+    bmsCableType: 'Cáp Cat6/RS485 (BMS ➔ Gateway) + Cáp DMX IN (Gateway ➔ ZXP399)',
+    bmsConnectionGuide: 'UniPlayer không có Native BMS. Nhận lệnh kích hoạt cảnh qua Gateway hãng thứ 3 hoặc tiếp điểm DMX IN. Tích hợp sẵn 8 cổng DMX output xuất thẳng tới các tuyến đèn. Đọc file kịch bản *.arm từ thẻ nhớ SD 8GB FAT32.',
     product12NC: '911401779642',
     rackUnit: 'Wall/Rackmount Box',
     maxAddressesPerPort: 512,
@@ -245,7 +245,7 @@ export const INITIAL_CONTROLLERS: ControllerDevice[] = [
     maxCableDistanceMeters: 100,
     voltageInput: '12V DC',
     priceVND: 28500000,
-    notes: 'UniPlayer xuất trực tiếp 8 đường DMX (4,096 kênh), không cần mua thêm bộ chia phụ Sub-controller. Phù hợp các công trình vừa và nhỏ.'
+    notes: 'UniPlayer xuất trực tiếp 8 đường DMX (4,096 kênh). Không hỗ trợ Native BMS, cần Gateway bên thứ 3 để kết nối BMS.'
   },
   {
     id: 'ctrl-philips-zxp399-uniplayer-mini',
@@ -273,18 +273,18 @@ export const INITIAL_CONTROLLERS: ControllerDevice[] = [
     model: 'Uni DMX Master Controller (Interact Outdoor / ZXP399)',
     name: 'Bộ Điều Khiển Trung Tâm DMX Master OutDoor ZXP399 System Controller',
     protocol: 'DMX512/RDM',
-    bmsSupport: ['BACnet IP', 'Modbus TCP', 'Interact Cloud'],
-    bmsIntegrationType: 'Native IP',
-    bmsCableType: 'Cáp Cat6 SFTP RJ45 chống nước IP66',
-    bmsConnectionGuide: 'Kết nối nền tảng Interact Landmark / Interact City qua đám mây và giao tiếp BACnet IP nội bộ.',
+    bmsSupport: ['None'],
+    bmsIntegrationType: 'External Gateway',
+    bmsCableType: 'Cáp Cat6 SFTP RJ45 chống nước IP66 + Cáp DMX IN từ Gateway',
+    bmsConnectionGuide: 'Kết nối nền tảng Interact Landmark / Interact City qua đám mây. Đối với chuẩn BMS cố định tại chỗ (BACnet/Modbus), cần trang bị thêm Gateway hãng thứ 3 chuyển đổi sang DMX IN cắm vào cổng DMX IN của Master Controller.',
     rackUnit: 'IP66 Weatherproof Outdoor Enclosure',
     maxAddressesPerPort: 512,
     portsCount: 4,
     maxDaisyChainDevices: 32,
     maxCableDistanceMeters: 300,
     voltageInput: '100-240V AC IP66',
-    priceVND: 38500000,
-    notes: 'Bộ điều khiển DMX512/RDM ngoại thất chuẩn IP66 chuyên dụng cho hệ thống Interact Outdoor chiếu sáng kiến trúc Facade.'
+    priceVND: 48000000,
+    notes: 'Master Controller ngoài trời chuẩn IP66. Không có Native BMS, cần module Gateway hãng thứ 3 chuyển đổi BACnet/Modbus sang DMX IN.'
   },
 
   // --- COLOR KINETICS (SIGNIFY) CONTROLLERS & POWER/DATA SUPPLIES ---

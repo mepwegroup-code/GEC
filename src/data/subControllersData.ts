@@ -690,6 +690,39 @@ export const INITIAL_SUB_CONTROLLERS: SubControllerDevice[] = [
   // --- 14. ADFWEB / INTESIS: MODULE PHỤ TRỢ GATEWAY BMS ---
   // =========================================================================
   {
+    id: 'sub-adfweb-dmx-bacnet',
+    brand: 'ADFWeb / Intesis',
+    model: 'ADFWeb HD67718-IP (BACnet to DMX Gateway)',
+    name: 'Bộ Cổng Chuyển Đổi Giao Thức BMS BACnet IP Sang DMX512 IN ADFWeb HD67718-IP',
+    portsCount: 1,
+    maxAddressesPerPort: 512,
+    voltageInput: '12-35V DC / 24V AC DIN-Rail',
+    priceVND: 19500000,
+    notes: 'Bộ Gateway hãng thứ 3 chuyển đổi giao thức BACnet IP từ BMS tòa nhà thành tín hiệu DMX IN cắm vào ZXP399 Master Controller.'
+  },
+  {
+    id: 'sub-adfweb-dmx-modbus',
+    brand: 'ADFWeb / Intesis',
+    model: 'ADFWeb HD67719-IP (Modbus to DMX Gateway)',
+    name: 'Bộ Cổng Chuyển Đổi Giao Thức BMS Modbus TCP/RTU Sang DMX512 IN ADFWeb HD67719-IP',
+    portsCount: 1,
+    maxAddressesPerPort: 512,
+    voltageInput: '12-35V DC / 24V AC DIN-Rail',
+    priceVND: 18500000,
+    notes: 'Bộ Gateway hãng thứ 3 chuyển đổi giao thức Modbus TCP/RTU thành tín hiệu DMX IN cắm vào ZXP399 Master Controller.'
+  },
+  {
+    id: 'sub-intesis-dmx-bacnet',
+    brand: 'ADFWeb / Intesis',
+    model: 'Intesis INBACDMX020 (BACnet to DMX)',
+    name: 'Bộ Cổng Chuyển Đổi Giao Thức BACnet IP Sang DMX512 Intesis INBACDMX',
+    portsCount: 1,
+    maxAddressesPerPort: 512,
+    voltageInput: '9-36V DC / 24V AC DIN-Rail',
+    priceVND: 22500000,
+    notes: 'Gateway chuyên dụng xuất xứ HMS Networks, chuyển đổi BACnet IP sang DMX IN cho bộ điều khiển ZXP399.'
+  },
+  {
     id: 'sub-intesis-bacnet-exp',
     brand: 'ADFWeb / Intesis',
     model: 'Intesis BACnet/IP Expansion Coupler',
