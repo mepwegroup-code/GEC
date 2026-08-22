@@ -90,8 +90,8 @@ export interface DesignLineItem {
   luminaireBrand: string;          // Hãng đèn đã chọn
   luminaireId: string;             // ID Đèn chọn từ Sheet 2
   fixtureQuantity: number;         // Số lượng đèn (cái)
-  controllerBrand: string;         // Hãng điều khiển đã chọn
-  controllerId: string;            // ID Bộ điều khiển chọn từ Sheet 1
+  controllerBrand?: string;         // Hãng điều khiển đã chọn
+  controllerId?: string;            // ID Bộ điều khiển chọn từ Sheet 1
   subControllerBrand?: string;     // Hãng thiết bị điều khiển phụ 1 (Pharos, Signify Dynalite, Helvar)
   subControllerId?: string;        // ID Thiết bị điều khiển phụ 1 (VD: RIO 84, DDNG485)
   subControllerQuantity?: number;  // Số lượng thiết bị phụ 1 (nếu chỉnh tay)
@@ -119,6 +119,7 @@ export interface DesignLineItem {
   // Phase Assignment & Supply System
   assignedPhase?: 'L1' | 'L2' | 'L3' | '3P' | 'DC'; // Phân pha cấp nguồn (Pha A/L1, Pha B/L2, Pha C/L3, hoặc 3 Pha 380V, DC)
   supplyPhaseType?: SupplyPhaseType;                 // Loại hệ thống điện áp cấp (1P_220V, 3P_380V, DC_24V...)
+  controlType?: 'onoff' | 'smart';
 }
 
 // Auto-Calculated Result for Line Item

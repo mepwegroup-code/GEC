@@ -12,7 +12,9 @@ import {
   CheckCircle,
   SlidersHorizontal,
   ChevronDown,
-  FileJson
+  FileJson,
+  Palette,
+  Check
 } from 'lucide-react';
 import { LightingProject, ProjectPreset } from '../types';
 import { PROJECT_PRESETS } from '../data/samplePresets';
@@ -38,6 +40,8 @@ interface NavbarProps {
   totalCostVND: number;
   lastSavedTime?: string;
   isAutoSaving?: boolean;
+  theme: string;
+  setTheme: (theme: string) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -59,7 +63,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   totalPowerKW,
   totalCostVND,
   lastSavedTime,
-  isAutoSaving
+  isAutoSaving,
+  theme,
+  setTheme
 }) => {
   const jsonFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -70,8 +76,16 @@ export const Navbar: React.FC<NavbarProps> = ({
       e.target.value = '';
     }
   };
+
+  const THEME_OPTIONS = [
+    { id: 'blue', name: 'Xanh Công Nghệ (Tech Blue)', colorBg: 'bg-[#00A3FF]' },
+    { id: 'emerald', name: 'Xanh Ngọc (Emerald)', colorBg: 'bg-emerald-500' },
+    { id: 'amber', name: 'Vàng Hổ Phách (Amber)', colorBg: 'bg-amber-500' },
+    { id: 'purple', name: 'Tím Hoàng Gia (Purple)', colorBg: 'bg-purple-500' },
+    { id: 'light', name: 'Sáng Tối Giản (Light)', colorBg: 'bg-blue-600' },
+  ];
   return (
-    <header className="bg-[#121212] border-b border-[#333333] text-[#E0E0E0] sticky top-0 z-30 shadow-2xl">
+    <header className="bg-[var(--bg-card)] border-b border-[var(--border-color)] text-[var(--text-main)] sticky top-0 z-30 shadow-2xl">
       {/* Top Banner */}
       <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         {/* Logo & Title */}
@@ -222,6 +236,37 @@ export const Navbar: React.FC<NavbarProps> = ({
             <Download className="w-4 h-4" />
             <span>Xuất Excel (.xlsx)</span>
           </button>
+
+          {/* Theme Color Selector Dropdown (Top Right) */}
+          <div className="relative group">
+            <button
+              type="button"
+              className="flex items-center gap-1.5 bg-[var(--bg-card-hover)] hover:opacity-90 text-[var(--text-main)] text-xs font-mono uppercase tracking-wider px-3 py-2 border border-[var(--border-color)] transition-colors cursor-pointer"
+              title="Tuỳ chọn màu giao diện"
+            >
+              <Palette className="w-3.5 h-3.5 text-[var(--primary)]" />
+              <span className="hidden sm:inline">Giao Diện</span>
+              <ChevronDown className="w-3 h-3 text-[var(--text-muted)]" />
+            </button>
+            <div className="absolute right-0 mt-1 w-56 bg-[var(--bg-card)] border border-[var(--border-color)] shadow-2xl p-1.5 hidden group-hover:block z-50">
+              <div className="text-[10px] font-mono font-bold text-[var(--primary)] px-2 py-1 uppercase tracking-widest border-b border-[var(--border-color)] mb-1">
+                Chọn Màu Giao Diện:
+              </div>
+              {THEME_OPTIONS.map((opt) => (
+                <button
+                  key={opt.id}
+                  onClick={() => setTheme(opt.id)}
+                  className={`w-full text-left px-2.5 py-2 hover:bg-[var(--bg-card-hover)] transition text-xs flex items-center justify-between rounded ${theme === opt.id ? 'bg-[var(--bg-card-hover)] font-semibold text-[var(--text-main)]' : 'text-[var(--text-muted)]'}`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className={`w-3 h-3 rounded-full ${opt.colorBg} shrink-0 shadow-sm`} />
+                    <span className="font-sans">{opt.name}</span>
+                  </div>
+                  {theme === opt.id && <Check className="w-3.5 h-3.5 text-[var(--primary)]" />}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 

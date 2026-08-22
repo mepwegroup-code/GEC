@@ -70,7 +70,7 @@ export const SheetTabs: React.FC<SheetTabsProps> = ({
   ];
 
   return (
-    <nav className="bg-[#0A0A0A] border-b border-[#333333] px-4 pt-3">
+    <nav className="bg-[var(--bg-card)] border-b border-[var(--border-color)] px-4 pt-3">
       <div className="max-w-7xl mx-auto flex overflow-x-auto space-x-2 no-scrollbar">
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -82,8 +82,8 @@ export const SheetTabs: React.FC<SheetTabsProps> = ({
               onClick={() => setActiveTab(tab.id)}
               className={`flex flex-col items-start px-4 py-2.5 transition-all whitespace-nowrap border-b-2 text-left group ${
                 isActive
-                  ? 'bg-[#141414] border-[#00A3FF] text-[#F2F2F2]'
-                  : 'bg-[#0E0E0E] hover:bg-[#121212] border-transparent text-[#888888] hover:text-[#CCCCCC]'
+                  ? 'bg-[var(--bg-card-hover)] border-[var(--primary)] text-[var(--text-main)]'
+                  : 'bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border-transparent text-[var(--text-muted)] hover:text-[var(--text-main)]'
               }`}
             >
               <div className="flex items-center gap-2">

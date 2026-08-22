@@ -32,6 +32,13 @@ export function exportFullLightingSpreadsheetToExcel(
   }));
 
   const ws1 = XLSX.utils.json_to_sheet(sheet1Data);
+  // Style headers
+  const range1 = XLSX.utils.decode_range(ws1['!ref'] || 'A1:M1');
+  for (let C = range1.s.c; C <= range1.e.c; ++C) {
+    const address = XLSX.utils.encode_cell({ r: 0, c: C });
+    if (!ws1[address]) continue;
+    ws1[address].s = { font: { bold: true }, fill: { fgColor: { rgb: "DDDDDD" } } };
+  }
   ws1['!cols'] = [
     { wch: 5 },  // STT
     { wch: 20 }, // Hãng

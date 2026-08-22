@@ -37,6 +37,7 @@ interface SheetDesignCalculatorProps {
   controllers: ControllerDevice[];
   subControllers?: SubControllerDevice[];
   onUpdateLineItem: (updated: DesignLineItem) => void;
+  onUpdateMultipleLineItems: (updatedItems: DesignLineItem[]) => void;
   onAddLineItem: () => void;
   onDuplicateLineItem: (id: string) => void;
   onDeleteLineItem: (id: string) => void;
@@ -62,6 +63,7 @@ export const SheetDesignCalculator: React.FC<SheetDesignCalculatorProps> = ({
   onAddLineItem,
   onDuplicateLineItem,
   onDeleteLineItem,
+  onUpdateMultipleLineItems,
   lastSavedTime,
   isAutoSaving
 }) => {
@@ -158,6 +160,33 @@ export const SheetDesignCalculator: React.FC<SheetDesignCalculatorProps> = ({
         });
       }
     });
+  };
+
+  // Delete Master Controller for an entire Area
+  const handleDeleteAreaMasterController = (areaName: string) => {
+    console.log('Deleting master controller for area:', areaName);
+    const itemsToUpdate: DesignLineItem[] = [];
+    lineItems.forEach(item => {
+      if (getAreaGroup(item.zoneName) === areaName) {
+        console.log('Updating item:', item.id);
+        const updated: DesignLineItem = {
+          ...item,
+          controllerBrand: undefined,
+          controllerId: undefined,
+          subControllerBrand: undefined,
+          subControllerId: undefined,
+          subControllerQuantity: undefined,
+          subController2Brand: undefined,
+          subController2Id: undefined,
+          subController2Quantity: undefined,
+          bmsRequired: 'None'
+        };
+        itemsToUpdate.push(updated);
+      }
+    });
+    if (itemsToUpdate.length > 0) {
+      onUpdateMultipleLineItems(itemsToUpdate);
+    }
   };
 
   // Update Auxiliary / Sub-Controller 1 for an entire Area (e.g., Pharos RIO 84, EDN, DDNG485)
@@ -643,9 +672,19 @@ export const SheetDesignCalculator: React.FC<SheetDesignCalculatorProps> = ({
                           <Cpu className="w-3.5 h-3.5 text-amber-400" />
                           1. Bộ Điều Khiển Trung Tâm (Master Server Room PC)
                         </span>
-                        <span className="text-[9px] font-mono text-[#888888]">
-                          Master Controller ({totalAreaLines} tuyến)
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleDeleteAreaMasterController(areaName)}
+                            className="text-[10px] font-mono text-red-400 hover:text-red-300 flex items-center gap-1 hover:underline px-1.5 py-0.5 bg-red-950/30 border border-red-800/40"
+                            title="Xóa bộ điều khiển trung tâm khỏi khu vực này"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            <span>Xóa</span>
+                          </button>
+                          <span className="text-[9px] font-mono text-[#888888]">
+                            Master Controller ({totalAreaLines} tuyến)
+                          </span>
+                        </div>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 text-xs font-mono">
@@ -675,11 +714,16 @@ export const SheetDesignCalculator: React.FC<SheetDesignCalculatorProps> = ({
                             value={activeMasterCtrl?.id || ''}
                             onChange={e => {
                               const selectedCtrl = controllers.find(c => c.id === e.target.value);
-                              const brand = selectedCtrl ? selectedCtrl.brand : masterBrand;
-                              handleUpdateAreaMasterController(areaName, brand, e.target.value);
+                              if (!e.target.value) {
+                                handleDeleteAreaMasterController(areaName);
+                              } else {
+                                const brand = selectedCtrl ? selectedCtrl.brand : masterBrand;
+                                handleUpdateAreaMasterController(areaName, brand, e.target.value);
+                              }
                             }}
                             className="bg-[#161616] text-amber-400 text-xs px-2 py-1.5 border border-[#333333] font-bold focus:outline-none focus:border-amber-400"
                           >
+                            <option value="" className="bg-[#141414] text-[#888888]">None</option>
                             {filteredControllersForMaster.map(c => (
                               <option key={c.id} value={c.id} className="bg-[#141414] text-[#E0E0E0]">
                                 {c.model} ({c.portsCount} Ports/Univ • {c.protocol})

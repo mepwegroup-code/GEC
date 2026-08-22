@@ -41,6 +41,7 @@ export const AddAreaModal: React.FC<AddAreaModalProps> = ({
   const [initialQuantity, setInitialQuantity] = useState<number>(24);
   const [firstLineName, setFirstLineName] = useState('Tuyến 1: Đèn Chiếu Sáng Chính');
   const [selectedBmsProtocol, setSelectedBmsProtocol] = useState<BMSProtocol>('BACnet IP');
+  const [controlType, setControlType] = useState<'onoff' | 'smart'>('smart');
 
   if (!isOpen) return null;
 
@@ -74,15 +75,16 @@ export const AddAreaModal: React.FC<AddAreaModalProps> = ({
       luminaireBrand: selectedLumBrand,
       luminaireId: selectedLumId || (targetLum ? targetLum.id : ''),
       fixtureQuantity: initialQuantity,
-      controllerBrand: selectedCtrlBrand,
-      controllerId: selectedCtrlId || (targetCtrl ? targetCtrl.id : ''),
-      subControllerBrand: (isBMSSupported && targetSub) ? selectedCtrlBrand : undefined,
-      subControllerId: (isBMSSupported && targetSub) ? targetSub.id : undefined,
-      subControllerQuantity: (isBMSSupported && targetSub) ? 1 : undefined,
-      bmsRequired: selectedBmsProtocol,
+      controllerBrand: controlType === 'smart' ? selectedCtrlBrand : undefined,
+      controllerId: controlType === 'smart' ? (selectedCtrlId || (targetCtrl ? targetCtrl.id : '')) : undefined,
+      subControllerBrand: (controlType === 'smart' && isBMSSupported && targetSub) ? selectedCtrlBrand : undefined,
+      subControllerId: (controlType === 'smart' && isBMSSupported && targetSub) ? targetSub.id : undefined,
+      subControllerQuantity: (controlType === 'smart' && isBMSSupported && targetSub) ? 1 : undefined,
+      bmsRequired: controlType === 'smart' ? selectedBmsProtocol : 'None',
       controllerToFirstFixtureDistance: 50,
       interFixtureDistance: 2.0,
-      totalCableLengthMeters: 50 + Math.max(0, initialQuantity - 1) * 2.0
+      totalCableLengthMeters: 50 + Math.max(0, initialQuantity - 1) * 2.0,
+      controlType: controlType
     };
 
     onAddArea(newLine, areaName.trim());
@@ -147,136 +149,176 @@ export const AddAreaModal: React.FC<AddAreaModalProps> = ({
             />
           </div>
 
+          {/* Control Type Selection */}
+          <div className="space-y-1">
+            <label className="text-xs font-mono font-bold text-white">Kiểu Điều Khiển:</label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setControlType('onoff')}
+                className={`p-3 border text-xs font-mono font-bold flex flex-col items-center gap-1 transition-colors ${
+                  controlType === 'onoff'
+                    ? 'bg-[#00A3FF]/20 border-[#00A3FF] text-[#00A3FF]'
+                    : 'bg-[#141414] border-[#333333] text-[#888888] hover:border-[#555555]'
+                }`}
+              >
+                <Lock className="w-4 h-4" />
+                ON/OFF (Cơ Bản)
+              </button>
+              <button
+                type="button"
+                onClick={() => setControlType('smart')}
+                className={`p-3 border text-xs font-mono font-bold flex flex-col items-center gap-1 transition-colors ${
+                  controlType === 'smart'
+                    ? 'bg-[#00A3FF]/20 border-[#00A3FF] text-[#00A3FF]'
+                    : 'bg-[#141414] border-[#333333] text-[#888888] hover:border-[#555555]'
+                }`}
+              >
+                <Cpu className="w-4 h-4" />
+                SMART CONTROL (Thông Minh)
+              </button>
+            </div>
+          </div>
+
           {/* Master Controller for the Area */}
-          <div className="bg-[#111111] p-3.5 border border-[#262626] space-y-2">
-            <div className="text-[11px] font-mono uppercase text-amber-400 font-bold flex items-center gap-1.5">
-              <Cpu className="w-3.5 h-3.5 text-amber-400" />
-              <span>1. Bộ Điều Khiển Trung Tâm (Master Controller)</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
-              <div>
-                <label className="text-[10px] text-[#888888]">Hãng Điều Khiển:</label>
-                <select
-                  value={selectedCtrlBrand}
-                  onChange={e => {
-                    const b = e.target.value;
-                    setSelectedCtrlBrand(b);
-                    const list = controllers.filter(c => c.brand === b);
-                    if (list.length > 0) setSelectedCtrlId(list[0].id);
-                    const subList = subControllers.filter(s =>
-                      s.brand.toLowerCase().includes(b.toLowerCase()) ||
-                      b.toLowerCase().includes(s.brand.toLowerCase())
-                    );
-                    setSelectedSubId(subList[0]?.id || '');
-                  }}
-                  className="w-full bg-[#181818] text-[#00A3FF] font-bold p-2 border border-[#333333] mt-1"
-                >
-                  {controllerBrands.map(b => (
-                    <option key={b} value={b} className="bg-[#141414] text-[#E0E0E0]">{b}</option>
-                  ))}
-                </select>
+          {controlType === 'smart' && (
+            <div className="bg-[#111111] p-3.5 border border-[#262626] space-y-2">
+              <div className="text-[11px] font-mono uppercase text-amber-400 font-bold flex items-center gap-1.5">
+                <Cpu className="w-3.5 h-3.5 text-amber-400" />
+                <span>1. Bộ Điều Khiển Trung Tâm (Master Controller)</span>
               </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
+                <div>
+                  <label className="text-[10px] text-[#888888]">Hãng Điều Khiển (Tùy chọn):</label>
+                  <select
+                    value={selectedCtrlBrand}
+                    onChange={e => {
+                      const b = e.target.value;
+                      setSelectedCtrlBrand(b);
+                      const list = controllers.filter(c => c.brand === b);
+                      if (list.length > 0) setSelectedCtrlId(list[0].id);
+                      else setSelectedCtrlId('');
+                      const subList = subControllers.filter(s =>
+                        s.brand.toLowerCase().includes(b.toLowerCase()) ||
+                        b.toLowerCase().includes(s.brand.toLowerCase())
+                      );
+                      setSelectedSubId(subList[0]?.id || '');
+                    }}
+                    className="w-full bg-[#181818] text-[#00A3FF] font-bold p-2 border border-[#333333] mt-1"
+                  >
+                    <option value="" className="bg-[#141414] text-[#888888]">None</option>
+                    {controllerBrands.map(b => (
+                      <option key={b} value={b} className="bg-[#141414] text-[#E0E0E0]">{b}</option>
+                    ))}
+                  </select>
+                </div>
 
-              <div>
-                <label className="text-[10px] text-[#888888]">Model Master Controller:</label>
-                <select
-                  value={selectedCtrlId}
-                  onChange={e => setSelectedCtrlId(e.target.value)}
-                  className="w-full bg-[#181818] text-amber-400 font-bold p-2 border border-[#333333] mt-1"
-                >
-                  {filteredControllers.map(c => (
-                    <option key={c.id} value={c.id} className="bg-[#141414] text-[#E0E0E0]">
-                      {c.model} ({c.portsCount} Ports • {c.protocol})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Communication / Interface Device for the Area */}
-          <div className="bg-[#111111] p-3.5 border border-[#262626] space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="text-[11px] font-mono uppercase text-purple-400 font-bold flex items-center gap-1.5">
-                <Network className="w-3.5 h-3.5 text-purple-400" />
-                <span>2. Thiết Bị Hỗ Trợ Giao Tiếp Controller (BMS / Màn hình / Bàn phím / Remote / Mạng)</span>
-              </div>
-              {!isBMSSupported && (
-                <span className="text-[9px] font-mono text-amber-400 bg-amber-950/40 px-1.5 py-0.5 border border-amber-800/40 flex items-center gap-1">
-                  <Lock className="w-2.5 h-2.5" />
-                  Controller không hỗ trợ BMS
-                </span>
-              )}
-            </div>
-
-            {!isBMSSupported ? (
-              <div className="p-2 bg-[#161616] border border-[#2A2A2A] text-[11px] text-amber-300 font-mono">
-                Bộ điều khiển đã chọn hoạt động Standalone (Độc lập), không dùng thiết bị giao tiếp trung gian.
-              </div>
-            ) : filteredSubControllers.length === 0 ? (
-              <div className="p-2 bg-[#161616] border border-[#2A2A2A] text-[11px] text-[#888888] font-mono">
-                Hãng {selectedCtrlBrand} không có thiết bị giao tiếp trung gian riêng (Controller điều khiển trực tiếp).
-              </div>
-            ) : (
-              <div className="text-xs font-mono">
-                <label className="text-[10px] text-[#888888]">
-                  Model Thiết Bị Giao Tiếp (Tự động theo hãng {selectedCtrlBrand}):
-                </label>
-                <select
-                  value={selectedSubId || filteredSubControllers[0]?.id || ''}
-                  onChange={e => setSelectedSubId(e.target.value)}
-                  className="w-full bg-[#181818] text-purple-300 font-bold p-2 border border-[#333333] mt-1"
-                >
-                  {filteredSubControllers.map(s => (
-                    <option key={s.id} value={s.id} className="bg-[#141414] text-[#E0E0E0]">
-                      {s.model} ({s.portsCount} Ports • {s.voltageInput}) — {s.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </div>
-
-          {/* BMS Protocol Selection for the Area */}
-          <div className="bg-[#111111] p-3.5 border border-[#262626] space-y-2">
-            <div className="text-[11px] font-mono uppercase text-emerald-400 font-bold flex items-center gap-1.5">
-              <Network className="w-3.5 h-3.5 text-emerald-400" />
-              <span>3. Giao Thức Kết Nối BMS Tòa Nhà (BMS Protocol Hub)</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
-              <div>
-                <label className="text-[10px] text-[#888888]">Chuẩn Giao Thức BMS:</label>
-                <select
-                  value={selectedBmsProtocol}
-                  onChange={e => setSelectedBmsProtocol(e.target.value as BMSProtocol)}
-                  className="w-full bg-[#181818] text-emerald-400 font-bold p-2 border border-[#333333] mt-1"
-                >
-                  <option value="None" className="bg-[#141414] text-[#E0E0E0]">None (Standalone - Chạy Độc Lập)</option>
-                  <option value="BACnet IP" className="bg-[#141414] text-[#E0E0E0]">BACnet IP (Server Phòng Điều Khiển)</option>
-                  <option value="BACnet MSTP" className="bg-[#141414] text-[#E0E0E0]">BACnet MS/TP (RS-485)</option>
-                  <option value="Modbus TCP" className="bg-[#141414] text-[#E0E0E0]">Modbus TCP (LAN Ethernet)</option>
-                  <option value="Modbus RTU" className="bg-[#141414] text-[#E0E0E0]">Modbus RTU (RS-485 Serial)</option>
-                  <option value="KNX" className="bg-[#141414] text-[#E0E0E0]">KNX (Building Automation Bus)</option>
-                  <option value="Ethernet/IP" className="bg-[#141414] text-[#E0E0E0]">Ethernet/IP</option>
-                  <option value="MQTT" className="bg-[#141414] text-[#E0E0E0]">MQTT (IoT Cloud Service)</option>
-                  <option value="Rest API" className="bg-[#141414] text-[#E0E0E0]">Rest API (Web Service)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-[10px] text-[#888888]">Đặc tính kết nối:</label>
-                <div className="p-2 bg-[#161616] border border-[#2A2A2A] text-[11px] mt-1">
-                  {selectedBmsProtocol === 'None' ? (
-                    <span className="text-[#888888]">Bộ điều khiển hoạt động độc lập (Local Scheduler)</span>
-                  ) : isBMSSupported && activeCtrl?.bmsSupport?.includes(selectedBmsProtocol) ? (
-                    <span className="text-emerald-400 font-bold">✓ Hỗ trợ Native trên Controller đã chọn</span>
-                  ) : (
-                    <span className="text-amber-400 font-bold">⚠️ Sẽ tự động bổ sung 1 Gateway BMS vào BOQ</span>
-                  )}
+                <div>
+                  <label className="text-[10px] text-[#888888]">Model Master Controller (Tùy chọn):</label>
+                  <select
+                    value={selectedCtrlId}
+                    onChange={e => setSelectedCtrlId(e.target.value)}
+                    className="w-full bg-[#181818] text-amber-400 font-bold p-2 border border-[#333333] mt-1 focus:outline-none focus:border-[#00A3FF] transition-colors"
+                  >
+                    <option value="" className="bg-[#141414] text-[#888888]">None</option>
+                    {filteredControllers.map(c => (
+                      <option key={c.id} value={c.id} className="bg-[#141414] text-[#E0E0E0]">
+                        {c.model} ({c.portsCount} Ports • {c.protocol})
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>
-          </div>
+          )}
+
+          {/* Communication / Interface Device for the Area */}
+          {controlType === 'smart' && (
+            <div className="bg-[#111111] p-3.5 border border-[#262626] space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="text-[11px] font-mono uppercase text-purple-400 font-bold flex items-center gap-1.5">
+                  <Network className="w-3.5 h-3.5 text-purple-400" />
+                  <span>2. Thiết Bị Hỗ Trợ Giao Tiếp Controller (BMS / Màn hình / Bàn phím / Remote / Mạng)</span>
+                </div>
+                {!isBMSSupported && (
+                  <span className="text-[9px] font-mono text-amber-400 bg-amber-950/40 px-1.5 py-0.5 border border-amber-800/40 flex items-center gap-1">
+                    <Lock className="w-2.5 h-2.5" />
+                    Controller không hỗ trợ BMS
+                  </span>
+                )}
+              </div>
+
+              {!isBMSSupported ? (
+                <div className="p-2 bg-[#161616] border border-[#2A2A2A] text-[11px] text-amber-300 font-mono">
+                  Bộ điều khiển đã chọn hoạt động Standalone (Độc lập), không dùng thiết bị giao tiếp trung gian.
+                </div>
+              ) : filteredSubControllers.length === 0 ? (
+                <div className="p-2 bg-[#161616] border border-[#2A2A2A] text-[11px] text-[#888888] font-mono">
+                  Hãng {selectedCtrlBrand} không có thiết bị giao tiếp trung gian riêng (Controller điều khiển trực tiếp).
+                </div>
+              ) : (
+                <div className="text-xs font-mono">
+                  <label className="text-[10px] text-[#888888]">
+                    Model Thiết Bị Giao Tiếp (Tự động theo hãng {selectedCtrlBrand}):
+                  </label>
+                  <select
+                    value={selectedSubId || filteredSubControllers[0]?.id || ''}
+                    onChange={e => setSelectedSubId(e.target.value)}
+                    className="w-full bg-[#181818] text-purple-300 font-bold p-2 border border-[#333333] mt-1"
+                  >
+                    {filteredSubControllers.map(s => (
+                      <option key={s.id} value={s.id} className="bg-[#141414] text-[#E0E0E0]">
+                        {s.model} ({s.portsCount} Ports • {s.voltageInput}) — {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* BMS Protocol Selection for the Area */}
+          {controlType === 'smart' && (
+            <div className="bg-[#111111] p-3.5 border border-[#262626] space-y-2">
+              <div className="text-[11px] font-mono uppercase text-emerald-400 font-bold flex items-center gap-1.5">
+                <Network className="w-3.5 h-3.5 text-emerald-400" />
+                <span>3. Giao Thức Kết Nối BMS Tòa Nhà (BMS Protocol Hub)</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
+                <div>
+                  <label className="text-[10px] text-[#888888]">Chuẩn Giao Thức BMS:</label>
+                  <select
+                    value={selectedBmsProtocol}
+                    onChange={e => setSelectedBmsProtocol(e.target.value as BMSProtocol)}
+                    className="w-full bg-[#181818] text-emerald-400 font-bold p-2 border border-[#333333] mt-1"
+                  >
+                    <option value="None" className="bg-[#141414] text-[#E0E0E0]">None (Standalone - Chạy Độc Lập)</option>
+                    <option value="BACnet IP" className="bg-[#141414] text-[#E0E0E0]">BACnet IP (Server Phòng Điều Khiển)</option>
+                    <option value="BACnet MSTP" className="bg-[#141414] text-[#E0E0E0]">BACnet MS/TP (RS-485)</option>
+                    <option value="Modbus TCP" className="bg-[#141414] text-[#E0E0E0]">Modbus TCP (LAN Ethernet)</option>
+                    <option value="Modbus RTU" className="bg-[#141414] text-[#E0E0E0]">Modbus RTU (RS-485 Serial)</option>
+                    <option value="KNX" className="bg-[#141414] text-[#E0E0E0]">KNX (Building Automation Bus)</option>
+                    <option value="Ethernet/IP" className="bg-[#141414] text-[#E0E0E0]">Ethernet/IP</option>
+                    <option value="MQTT" className="bg-[#141414] text-[#E0E0E0]">MQTT (IoT Cloud Service)</option>
+                    <option value="Rest API" className="bg-[#141414] text-[#E0E0E0]">Rest API (Web Service)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] text-[#888888]">Đặc tính kết nối:</label>
+                  <div className="p-2 bg-[#161616] border border-[#2A2A2A] text-[11px] mt-1">
+                    {selectedBmsProtocol === 'None' ? (
+                      <span className="text-[#888888]">Bộ điều khiển hoạt động độc lập (Local Scheduler)</span>
+                    ) : isBMSSupported && activeCtrl?.bmsSupport?.includes(selectedBmsProtocol) ? (
+                      <span className="text-emerald-400 font-bold">✓ Hỗ trợ Native trên Controller đã chọn</span>
+                    ) : (
+                      <span className="text-amber-400 font-bold">⚠️ Sẽ tự động bổ sung 1 Gateway BMS vào BOQ</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Initial First Line Configuration */}
           <div className="bg-[#111111] p-3.5 border border-[#262626] space-y-3">

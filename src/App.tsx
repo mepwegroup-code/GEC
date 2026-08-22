@@ -49,6 +49,19 @@ export default function App() {
   const [isAddLuminaireOpen, setIsAddLuminaireOpen] = useState(false);
   const [isProjectManagerOpen, setIsProjectManagerOpen] = useState(false);
 
+  // Theme customizer state
+  const [theme, setTheme] = useState<string>(() => {
+    return localStorage.getItem('lux_calc_theme') || 'blue';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('lux_calc_theme', theme);
+  }, [theme]);
+
+  const getThemeWrapperClass = (t: string) => {
+    return `min-h-screen theme-${t} bg-[var(--bg-app)] text-[var(--text-main)] flex flex-col font-sans selection:bg-[var(--primary)] selection:text-white`;
+  };
+
   // Derive current active project
   const activeProject = useMemo(() => {
     return (projects || []).find(p => p.id === activeProjectId) || projects?.[0];
@@ -212,6 +225,25 @@ export default function App() {
     }));
   };
 
+  // Update multiple line items at once
+  const handleUpdateMultipleLineItems = (updatedItems: DesignLineItem[]) => {
+    setProjects(prev => (prev || []).map(p => {
+      if (p.id === activeProjectId) {
+        const items = p.lineItems || [];
+        const newLineItems = items.map(item => {
+          const updated = updatedItems.find(u => u.id === item.id);
+          return updated ? updated : item;
+        });
+        return {
+          ...p,
+          updatedAt: new Date().toISOString(),
+          lineItems: newLineItems
+        };
+      }
+      return p;
+    }));
+  };
+
   const handleAddLineItem = () => {
     const defaultLum = luminaires?.[0];
     const defaultCtrl = controllers?.[0];
@@ -326,7 +358,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070707] text-[#E0E0E0] flex flex-col font-sans selection:bg-[#00A3FF] selection:text-black">
+    <div className={getThemeWrapperClass(theme)}>
       {/* Navigation Header Bar */}
       <Navbar
         activeTab={activeTab}
@@ -346,6 +378,8 @@ export default function App() {
         totalDesignLinesCount={lineItems.length}
         totalPowerKW={totalPowerKW}
         totalCostVND={totalCostVND}
+        theme={theme}
+        setTheme={setTheme}
       />
 
       {/* Spreadsheet Tabs */}
@@ -379,6 +413,7 @@ export default function App() {
             controllers={controllers}
             subControllers={subControllers}
             onUpdateLineItem={handleUpdateLineItem}
+            onUpdateMultipleLineItems={handleUpdateMultipleLineItems}
             onAddLineItem={handleAddLineItem}
             onDuplicateLineItem={handleDuplicateLineItem}
             onDeleteLineItem={handleDeleteLineItem}
